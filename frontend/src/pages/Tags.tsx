@@ -1,0 +1,186 @@
+import { Link } from "react-router-dom";
+import { Tags as TagsIcon, Hash, Sparkles } from "lucide-react";
+import { useTags } from "@/hooks/use-tags";
+
+export default function Tags() {
+  const { data: tags, isLoading } = useTags();
+
+  if (isLoading) {
+    return (
+      <div className="animate-fade-in p-6 max-w-5xl mx-auto">
+        <div className="flex items-center gap-3 mb-6">
+          <TagsIcon className="h-6 w-6 text-sky-600" />
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            Tags
+          </h1>
+        </div>
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
+            <div className="h-3 w-20 animate-pulse bg-gray-200 dark:bg-gray-700 rounded mb-4" />
+            <div className="flex flex-wrap gap-2">
+              {[72, 96, 80, 110, 64, 90, 76, 104, 68, 88, 100, 72].map((w, i) => (
+                <div key={i} className="h-7 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-full" style={{ width: `${w}px` }} />
+              ))}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+            <div className="h-10 animate-pulse bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800" />
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-5 py-3 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
+                <div className="w-4 h-4 animate-pulse bg-gray-200 dark:bg-gray-700 rounded" />
+                <div className="h-4 animate-pulse bg-gray-200 dark:bg-gray-700 rounded" style={{ width: `${[100, 80, 120, 90, 110][i % 5]}px` }} />
+                <div className="ml-auto h-4 w-8 animate-pulse bg-gray-100 dark:bg-gray-800 rounded-full" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!tags || tags.length === 0) {
+    return (
+      <div className="animate-fade-in p-6 max-w-5xl mx-auto">
+        <div className="flex items-center gap-3 mb-6">
+          <TagsIcon className="h-6 w-6 text-sky-600" />
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            Tags
+          </h1>
+        </div>
+        <div className="text-center py-16 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+          <TagsIcon className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+          <p className="text-gray-700 dark:text-gray-300 text-lg font-medium mb-1">
+            No tags
+          </p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">
+            Tags are created automatically when you save items with AI tagging enabled.
+          </p>
+          <Link to="/knowledge" className="text-sm text-sky-600 hover:text-sky-700 font-medium">Save your first item</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const maxCount = Math.max(...tags.map((t) => t.usage_count), 1);
+  const minCount = Math.min(...tags.map((t) => t.usage_count), 0);
+
+  const getOpacity = (count: number) => {
+    const ratio =
+      maxCount === minCount
+        ? 0.5
+        : (count - minCount) / (maxCount - minCount);
+    return 0.6 + ratio * 0.4;
+  };
+
+  const getFontSize = (count: number) => {
+    const ratio =
+      maxCount === minCount
+        ? 0.5
+        : (count - minCount) / (maxCount - minCount);
+    return 12 + ratio * 20;
+  };
+
+  const rootTags = tags.filter((t) => !t.parent_id);
+  const childTags = (parentId: string) =>
+    tags.filter((t) => t.parent_id === parentId);
+
+  return (
+    <div className="animate-fade-in p-6 max-w-5xl mx-auto">
+      <div className="flex items-center gap-3 mb-6">
+        <TagsIcon className="h-6 w-6 text-sky-600" />
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          Tags
+        </h1>
+      </div>
+
+      <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-6 mb-8">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-4">
+          Tag Cloud
+        </h2>
+        <div className="flex flex-wrap gap-2.5 items-center">
+          {tags.map((tag) => (
+            <Link
+              key={tag.id}
+              to={`/knowledge?tag_id=${tag.id}`}
+              title={`${tag.usage_count} items`}
+              style={{
+                fontSize: `${getFontSize(tag.usage_count)}px`,
+                opacity: getOpacity(tag.usage_count),
+              }}
+              className="px-3 py-1 rounded-full bg-sky-50 dark:bg-sky-900/20 text-sky-600 cursor-pointer transition-all duration-200 hover:shadow-md hover:bg-sky-100 dark:hover:bg-sky-900/40"
+            >
+              {tag.name}
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400 px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+          All Tags
+        </h2>
+        <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+          {rootTags.map((tag) => (
+            <li key={tag.id}>
+              <Link
+                to={`/knowledge?tag_id=${tag.id}`}
+                className="flex items-center justify-between px-5 py-3 hover:bg-sky-50/50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Hash className="h-4 w-4 text-gray-400" />
+                  {tag.color && (
+                    <span
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: tag.color }}
+                    />
+                  )}
+                  <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+                    {tag.name}
+                  </span>
+                  {tag.ai_generated && (
+                    <span className="inline-flex items-center gap-1 text-xs text-sky-600 bg-sky-50 dark:bg-sky-900/20 px-1.5 py-0.5 rounded-full">
+                      <Sparkles className="h-3 w-3" />
+                      AI
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
+                  {tag.usage_count}
+                </span>
+              </Link>
+              {childTags(tag.id).map((child) => (
+                <Link
+                  key={child.id}
+                  to={`/knowledge?tag_id=${child.id}`}
+                  className="flex items-center justify-between pl-10 pr-5 py-2.5 bg-gray-50/50 dark:bg-gray-800/30 hover:bg-sky-50/50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Hash className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600" />
+                    {child.color && (
+                      <span
+                        className="w-2 h-2 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: child.color }}
+                      />
+                    )}
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {child.name}
+                    </span>
+                    {child.ai_generated && (
+                      <span className="inline-flex items-center gap-1 text-xs text-sky-600 bg-sky-50 dark:bg-sky-900/20 px-1.5 py-0.5 rounded-full">
+                        <Sparkles className="h-3 w-3" />
+                        AI
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
+                    {child.usage_count}
+                  </span>
+                </Link>
+              ))}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}

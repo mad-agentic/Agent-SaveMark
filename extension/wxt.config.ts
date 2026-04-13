@@ -1,0 +1,18 @@
+import { defineConfig } from "wxt";
+
+export default defineConfig({
+  srcDir: "src",
+  outDir: "dist",
+  manifest: {
+    name: "Agent-SaveMark",
+    description: "Save anything to your AI-powered knowledge base",
+    permissions: ["activeTab", "tabs", "contextMenus", "storage", "sidePanel"],
+    host_permissions: ["<all_urls>"],
+    icons: {
+      16: "icon/16.png",
+      32: "icon/32.png",
+      48: "icon/48.png",
+      128: "icon/128.png",
+    },
+  },
+});

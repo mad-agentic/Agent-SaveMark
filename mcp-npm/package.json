@@ -1,0 +1,41 @@
+{
+  "name": "@mad-agentic/Agent-SaveMark-mcp",
+  "version": "0.2.1",
+  "description": "MCP client for Agent-SaveMark — connect Claude Desktop, Cursor, and other MCP clients to your self-hosted Agent-SaveMark instance.",
+  "type": "module",
+  "bin": {
+    "Agent-SaveMark-mcp": "bin.mjs"
+  },
+  "files": [
+    "bin.mjs",
+    "README.md"
+  ],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "Agent-SaveMark",
+    "knowledge-base",
+    "claude",
+    "cursor"
+  ],
+  "author": "onllm-dev",
+  "license": "MIT",
+  "homepage": "https://github.com/mad-agentic/Agent-SaveMark#mcp",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mad-agentic/Agent-SaveMark.git",
+    "directory": "mcp-npm"
+  },
+  "bugs": {
+    "url": "https://github.com/mad-agentic/Agent-SaveMark/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "mcp-remote": "^0.1.38"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
