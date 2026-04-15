@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Search as SearchIcon, Loader2, Sparkles, AlignLeft, StickyNote, Zap, Tag, Star, Archive } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { Search as SearchIcon, Loader2, Sparkles, AlignLeft, StickyNote, Zap, Tag, Star, Archive, MessageCircle, SendHorizontal } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import DOMPurify from "dompurify";
 import { api } from "@/api/client";
@@ -40,6 +40,32 @@ interface UnifiedResult {
   total: number;
 }
 
+interface ChatSource {
+  item_id: string;
+  title: string;
+  url: string | null;
+  snippet: string;
+}
+
+interface ChatResponse {
+  answer: string;
+  sources: ChatSource[];
+}
+
+interface ChatConfigResponse {
+  provider: string;
+  active_model: string;
+  available_models: string[];
+  model_fetch_status: "connected" | "failed";
+  model_fetch_message: string | null;
+}
+
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+  sources?: ChatSource[];
+}
+
 const PLATFORM_LABELS: Record<string, string> = {
   generic: "Web",
   youtube: "YouTube",
@@ -72,6 +98,15 @@ const TYPE_LABELS: Record<string, string> = {
   file: "File",
 };
 
+const PROVIDER_LABELS: Record<string, string> = {
+  ollama: "Ollama",
+  groq: "Groq",
+  nvidia: "NVIDIA",
+  custom: "Custom",
+};
+
+const CHAT_MODEL_STORAGE_PREFIX = "search-chat-model:";
+
 type SearchMode = "fulltext" | "semantic" | "hybrid";
 
 function formatPlatformLabel(raw: string | undefined | null): string {
@@ -86,6 +121,7 @@ function formatTypeLabel(raw: string | undefined | null): string {
 }
 
 export default function Search() {
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") ?? "";
   const [input, setInput] = useState(initialQuery);
@@ -96,11 +132,53 @@ export default function Search() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [showFavorites, setShowFavorites] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+  const [chatInput, setChatInput] = useState("");
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [selectedChatModel, setSelectedChatModel] = useState("");
+  const chatboxRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (location.hash !== "#chatbox") return;
+    requestAnimationFrame(() => {
+      chatboxRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [location.hash]);
 
   const { data: filters } = useQuery<SearchFilters>({
     queryKey: ["search-filters"],
     queryFn: () => api.get("/api/v1/search/filters"),
   });
+
+  const { data: chatConfig } = useQuery<ChatConfigResponse>({
+    queryKey: ["chat-config"],
+    queryFn: () => api.get("/api/v1/ai/chat-config"),
+  });
+
+  useEffect(() => {
+    if (!chatConfig) return;
+
+    const storageKey = `${CHAT_MODEL_STORAGE_PREFIX}${chatConfig.provider}`;
+    const savedModel = window.localStorage.getItem(storageKey);
+
+    setSelectedChatModel((current) => {
+      if (current && chatConfig.available_models.includes(current)) {
+        return current;
+      }
+
+      if (savedModel && chatConfig.available_models.includes(savedModel)) {
+        return savedModel;
+      }
+
+      return chatConfig.active_model || chatConfig.available_models[0] || "";
+    });
+  }, [chatConfig]);
+
+  useEffect(() => {
+    if (!chatConfig || !selectedChatModel) return;
+    window.localStorage.setItem(`${CHAT_MODEL_STORAGE_PREFIX}${chatConfig.provider}`, selectedChatModel);
+  }, [chatConfig, selectedChatModel]);
 
   // Build filter params
   const filterParams = new URLSearchParams();
@@ -177,6 +255,50 @@ export default function Search() {
     { key: "semantic", label: "Semantic", icon: Sparkles, desc: "AI meaning-based search" },
   ];
 
+  const handleAskChat = async () => {
+    const message = chatInput.trim();
+    if (!message || chatLoading) return;
+
+    setChatError(null);
+    setChatInput("");
+    setChatMessages((prev) => [...prev, { role: "user", content: message }]);
+    setChatLoading(true);
+
+    try {
+      const response = await api.post<ChatResponse>("/api/v1/ai/chat-search", {
+        message,
+        model: selectedChatModel || null,
+        limit: 6,
+        item_type: selectedType,
+        source_platform: selectedPlatform,
+        is_favorite: showFavorites ? true : null,
+        is_archived: showArchived ? true : null,
+        tag: selectedTag,
+      });
+
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: response.answer,
+          sources: response.sources,
+        },
+      ]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to get AI response";
+      setChatError(message);
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "I could not answer right now. Please try again in a moment.",
+        },
+      ]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
   return (
     <div className="animate-fade-in p-6 max-w-5xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
@@ -184,6 +306,123 @@ export default function Search() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
           Search
         </h1>
+      </div>
+
+      <div ref={chatboxRef} className="mb-6 rounded-2xl border border-sky-100 dark:border-sky-900/40 bg-gradient-to-br from-sky-50 to-cyan-50 dark:from-gray-900 dark:to-gray-950 p-4 sm:p-5">
+        <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="h-5 w-5 text-sky-600" />
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">AI Chatbox</h2>
+            <span className="text-xs text-sky-700 dark:text-sky-300 bg-sky-100 dark:bg-sky-950/70 px-2 py-0.5 rounded-full">
+              Fast answer from your saved knowledge
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <span className="inline-flex items-center rounded-full bg-white/80 px-2.5 py-1 text-xs font-medium text-gray-700 ring-1 ring-sky-100 dark:bg-gray-900/70 dark:text-gray-200 dark:ring-gray-800">
+              Provider: {PROVIDER_LABELS[chatConfig?.provider ?? ""] ?? (chatConfig?.provider || "Unknown")}
+            </span>
+            <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+              <span>Model</span>
+              <select
+                value={selectedChatModel}
+                onChange={(e) => setSelectedChatModel(e.target.value)}
+                disabled={!chatConfig || chatConfig.available_models.length <= 1 || chatLoading}
+                className="min-w-0 rounded-lg border border-sky-100 bg-white px-3 py-1.5 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-100"
+              >
+                {(chatConfig?.available_models.length ? chatConfig.available_models : [chatConfig?.active_model || "Default model"])
+                  .filter(Boolean)
+                  .map((model) => (
+                    <option key={model} value={model}>
+                      {model}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            {chatConfig && (
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${
+                  chatConfig.model_fetch_status === "connected"
+                    ? "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900"
+                    : "bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-900"
+                }`}
+                title={chatConfig.model_fetch_message ?? undefined}
+              >
+                {chatConfig.model_fetch_status === "connected" ? "Connected" : "Failed to fetch models"}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-sky-100 dark:border-gray-800 bg-white/90 dark:bg-gray-900/80 p-3 mb-3 max-h-72 overflow-y-auto space-y-3">
+          {chatMessages.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Ask anything about your saved links and notes. The AI will answer with evidence from matched items.
+            </p>
+          ) : (
+            chatMessages.map((msg, idx) => (
+              <div key={`${msg.role}-${idx}`} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div
+                  className={`max-w-[85%] rounded-xl px-3 py-2 text-sm whitespace-pre-wrap ${
+                    msg.role === "user"
+                      ? "bg-sky-600 text-white"
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
+                  }`}
+                >
+                  {msg.content}
+                  {msg.role === "assistant" && msg.sources && msg.sources.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
+                      <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Sources</p>
+                      {msg.sources.slice(0, 3).map((source) => (
+                        <Link
+                          key={source.item_id}
+                          to={`/item/${source.item_id}`}
+                          className="block text-xs underline text-sky-700 dark:text-sky-300 hover:text-sky-800 dark:hover:text-sky-200"
+                        >
+                          {source.title}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void handleAskChat();
+              }
+            }}
+            placeholder="Ask AI to find insights from your SaveMark..."
+            className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-600"
+          />
+          <button
+            onClick={() => void handleAskChat()}
+            disabled={chatLoading || !chatInput.trim()}
+            className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-medium hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {chatLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizontal className="h-4 w-4" />}
+            Ask
+          </button>
+        </div>
+
+        {chatError && <p className="mt-2 text-xs text-red-500">{chatError}</p>}
+        {!chatError && chatConfig && (
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            Chat will use <span className="font-medium text-gray-700 dark:text-gray-200">{selectedChatModel || chatConfig.active_model}</span> on {PROVIDER_LABELS[chatConfig.provider] ?? chatConfig.provider}.
+          </p>
+        )}
+        {!chatError && chatConfig?.model_fetch_status === "failed" && chatConfig.model_fetch_message && (
+          <p className="mt-1 text-xs text-rose-500 dark:text-rose-300">{chatConfig.model_fetch_message}</p>
+        )}
       </div>
 
       <div className="relative mb-4">
@@ -196,9 +435,17 @@ export default function Search() {
           autoFocus
           className="w-full pl-12 pr-12 py-3.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-sky-600 transition-all duration-200 shadow-sm"
         />
-        {showSkeleton && (
-          <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 animate-spin" />
-        )}
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+          {showSkeleton && <Loader2 className="h-4 w-4 text-gray-400 animate-spin" />}
+          <button
+            type="button"
+            onClick={() => chatboxRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            title="Open AI Chatbox"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-950/40 transition-colors"
+          >
+            <MessageCircle className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {/* Search mode toggle */}

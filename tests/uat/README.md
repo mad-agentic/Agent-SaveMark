@@ -14,7 +14,7 @@ chunk, or throws an uncaught error.
 ## Run
 
 ```bash
-UAT_BASE_URL=http://localhost:5173 \
+UAT_BASE_URL=http://localhost:4041 \
 UAT_USERNAME=yourname \
 UAT_PASSWORD='secret' \
 node tests/uat/routes.mjs
@@ -27,7 +27,7 @@ make uat
 ```
 
 Environment variables:
-- `UAT_BASE_URL` — app URL (default `http://localhost:5173`)
+- `UAT_BASE_URL` — app URL (default `http://localhost:4041`)
 - `UAT_USERNAME`, `UAT_PASSWORD` — account to log in with
 - `UAT_COLLECTION_UUID` — a real collection UUID for `/collections/:id`
 

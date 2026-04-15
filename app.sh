@@ -31,7 +31,7 @@ APP_NAME="Agent-SaveMark"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 VERSION=$(grep '^version' "$SCRIPT_DIR/pyproject.toml" | head -1 | sed 's/.*"\(.*\)"/\1/')
 
-FRONTEND_PORT=5173
+FRONTEND_PORT=4041
 
 PID_DIR="$SCRIPT_DIR/.pids"
 LOG_DIR="$SCRIPT_DIR/logs"
@@ -45,14 +45,14 @@ FRONTEND_LOG="$LOG_DIR/frontend.log"
 WORKER_LOG="$LOG_DIR/worker.log"
 
 # Docker container names
-POSTGRES_CONTAINER="4dp-postgres"
-MEILI_CONTAINER="4dp-meili"
-CHROMA_CONTAINER="4dp-chromadb"
-OLLAMA_CONTAINER="4dp-ollama"
+POSTGRES_CONTAINER="agent-postgres"
+MEILI_CONTAINER="agent-meili"
+CHROMA_CONTAINER="agent-chromadb"
+OLLAMA_CONTAINER="agent-ollama"
 
 # Default PostgreSQL credentials (overridable via env)
-PG_USER="${PG_USER:-4dp}"
-PG_PASSWORD="${PG_PASSWORD:-4dp}"
+PG_USER="${PG_USER:-agent}"
+PG_PASSWORD="${PG_PASSWORD:-agent}"
 PG_DB="${PG_DB:-Agent-SaveMark}"
 PG_PORT="${PG_PORT:-5432}"
 
@@ -471,7 +471,7 @@ start_postgres() {
             -e POSTGRES_USER="$PG_USER" \
             -e POSTGRES_PASSWORD="$PG_PASSWORD" \
             -e POSTGRES_DB="$PG_DB" \
-            -v 4dp-postgres:/var/lib/postgresql/data \
+            -v agent-postgres:/var/lib/postgresql/data \
             postgres:16-alpine >/dev/null
     fi
 
@@ -507,7 +507,7 @@ start_meilisearch() {
         docker run -d --name "$MEILI_CONTAINER" \
             -p 7700:7700 \
             -e MEILI_MASTER_KEY="$meili_key" \
-            -v 4dp-meili:/meili_data \
+            -v agent-meili:/meili_data \
             getmeili/meilisearch:v1.12 >/dev/null
     fi
 
@@ -541,7 +541,7 @@ start_chromadb() {
     else
         docker run -d --name "$CHROMA_CONTAINER" \
             -p 8000:8000 \
-            -v 4dp-chroma:/chroma/chroma \
+            -v agent-chroma:/chroma/chroma \
             chromadb/chroma:latest >/dev/null
     fi
 
@@ -577,7 +577,7 @@ start_ollama() {
     else
         docker run -d --name "$OLLAMA_CONTAINER" \
             -p 11434:11434 \
-            -v 4dp-ollama:/root/.ollama \
+            -v agent-ollama:/root/.ollama \
             ollama/ollama:latest >/dev/null
     fi
 

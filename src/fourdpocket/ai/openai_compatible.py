@@ -41,30 +41,31 @@ class OpenAICompatibleProvider:
         ov = overrides or {}
         provider = ov.get("chat_provider") or provider or settings.ai.chat_provider
         config = PROVIDER_CONFIGS.get(provider, PROVIDER_CONFIGS["ollama"])
+        override_model = ov.get("chat_model") or ov.get("model")
 
         self._api_type = "openai"  # default for all built-in providers
         base_url = config["base_url"]
 
         if provider == "ollama":
-            base_url = f"{settings.ai.ollama_url}/v1"
+            base_url = f"{(ov.get('ollama_url') or settings.ai.ollama_url).rstrip('/')}/v1"
             api_key = "ollama"
-            self._model = settings.ai.ollama_model
+            self._model = override_model or ov.get("ollama_model") or settings.ai.ollama_model
         elif provider == "groq":
             api_key = ov.get("groq_api_key") or settings.ai.groq_api_key
-            self._model = config["default_model"]
+            self._model = override_model or config["default_model"]
         elif provider == "nvidia":
             api_key = ov.get("nvidia_api_key") or settings.ai.nvidia_api_key
-            self._model = config["default_model"]
+            self._model = override_model or config["default_model"]
         elif provider == "custom":
             base_url = ov.get("custom_base_url") or settings.ai.custom_base_url
             api_key = ov.get("custom_api_key") or settings.ai.custom_api_key
-            self._model = ov.get("custom_model") or settings.ai.custom_model
+            self._model = override_model or ov.get("custom_model") or settings.ai.custom_model
             self._api_type = ov.get("custom_api_type") or settings.ai.custom_api_type
             if not base_url or not api_key:
                 raise ValueError("Custom provider requires base_url and api_key")
         else:
             api_key = "none"
-            self._model = config.get("default_model", "llama3.2")
+            self._model = override_model or config.get("default_model", "llama3.2")
 
         self._provider = provider
 

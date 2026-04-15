@@ -17,10 +17,10 @@ export function ShortcutsHelpDialog() {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
-    window.addEventListener("4dp:open-shortcuts", handleOpen as EventListener);
+    window.addEventListener("agent:open-shortcuts", handleOpen as EventListener);
     window.addEventListener("keydown", handleKey);
     return () => {
-      window.removeEventListener("4dp:open-shortcuts", handleOpen as EventListener);
+      window.removeEventListener("agent:open-shortcuts", handleOpen as EventListener);
       window.removeEventListener("keydown", handleKey);
     };
   }, []);

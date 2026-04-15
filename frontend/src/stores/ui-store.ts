@@ -27,7 +27,7 @@ export const useUIStore = create<UIState>()(
         set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
       setViewMode: (viewMode) => set({ viewMode }),
     }),
-    { name: "4dp-ui-preferences" }
+    { name: "agent-ui-preferences" }
   )
 );
 
@@ -47,7 +47,7 @@ function applyTheme(theme: Theme) {
 if (typeof window !== "undefined") {
   try {
     const stored = JSON.parse(
-      localStorage.getItem("4dp-ui-preferences") || "{}"
+      localStorage.getItem("agent-ui-preferences") || "{}"
     );
     applyTheme(stored?.state?.theme || "system");
   } catch {

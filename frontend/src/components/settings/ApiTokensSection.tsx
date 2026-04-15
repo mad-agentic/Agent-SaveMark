@@ -2,6 +2,7 @@ import { useState } from "react";
 import { KeyRound, Plus, ShieldAlert } from "lucide-react";
 import {
   useApiTokens,
+  usePurgeApiToken,
   useRevokeApiToken,
   useRevokeAllApiTokens,
   type ApiTokenSummary,
@@ -16,7 +17,15 @@ function formatDate(iso: string | null): string {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
-function TokenRow({ token, onRevoke }: { token: ApiTokenSummary; onRevoke: (id: string) => void }) {
+function TokenRow({
+  token,
+  onRevoke,
+  onPurge,
+}: {
+  token: ApiTokenSummary;
+  onRevoke: (id: string) => void;
+  onPurge: (id: string) => void;
+}) {
   const isRevoked = token.revoked_at !== null;
   return (
     <tr className={`${isRevoked ? "opacity-60" : ""} border-t border-gray-100 dark:border-gray-800`}>
@@ -66,7 +75,12 @@ function TokenRow({ token, onRevoke }: { token: ApiTokenSummary; onRevoke: (id: 
       </td>
       <td className="py-2 px-3 text-right">
         {isRevoked ? (
-          <span className="text-[11px] text-gray-400">revoked</span>
+          <button
+            onClick={() => onPurge(token.id)}
+            className="text-xs text-red-600 dark:text-red-400 hover:underline cursor-pointer"
+          >
+            Remove
+          </button>
         ) : (
           <button
             onClick={() => onRevoke(token.id)}
@@ -83,6 +97,7 @@ function TokenRow({ token, onRevoke }: { token: ApiTokenSummary; onRevoke: (id: 
 export function ApiTokensSection() {
   const { data: tokens, isLoading } = useApiTokens();
   const revoke = useRevokeApiToken();
+  const purge = usePurgeApiToken();
   const revokeAll = useRevokeAllApiTokens();
 
   const [creating, setCreating] = useState(false);
@@ -139,7 +154,16 @@ export function ApiTokensSection() {
             </thead>
             <tbody>
               {tokens!.map((t) => (
-                <TokenRow key={t.id} token={t} onRevoke={(id) => revoke.mutate(id)} />
+                <TokenRow
+                  key={t.id}
+                  token={t}
+                  onRevoke={(id) => revoke.mutate(id)}
+                  onPurge={(id) => {
+                    if (confirm("Permanently remove this revoked token?")) {
+                      purge.mutate(id);
+                    }
+                  }}
+                />
               ))}
             </tbody>
           </table>

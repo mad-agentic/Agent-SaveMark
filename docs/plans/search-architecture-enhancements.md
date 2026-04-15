@@ -2,7 +2,7 @@
 
 **Status:** Implemented
 **Date:** 2026-04-12
-**Owner:** @prakersh
+**Owner:** @mad-agent
 **Scope:** Storage, search, and enrichment layers of Agent-SaveMark
 
 ---

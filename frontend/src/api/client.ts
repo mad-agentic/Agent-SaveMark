@@ -2,7 +2,7 @@
 // The actual auth token is in an httpOnly cookie set by the backend.
 // Browser automatically sends the cookie with same-origin requests.
 
-const LOGGED_IN_KEY = "4dp_logged_in";
+const LOGGED_IN_KEY = "agent_logged_in";
 
 export function isLoggedIn(): boolean {
   return localStorage.getItem(LOGGED_IN_KEY) === "1";

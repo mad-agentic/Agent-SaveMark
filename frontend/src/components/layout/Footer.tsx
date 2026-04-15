@@ -17,12 +17,12 @@ export function Footer() {
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1">
             Built with <Heart className="w-2.5 h-2.5 fill-red-500 text-red-500" /> by{" "}
-            <a href="https://onllm.dev" className="text-[#0096C7] hover:text-[#0077A8] dark:text-sky-400 transition-colors cursor-pointer" target="_blank" rel="noopener noreferrer">onllm.dev</a>
+            <a href="https://mad-agentic" className="text-[#0096C7] hover:text-[#0077A8] dark:text-sky-400 transition-colors cursor-pointer" target="_blank" rel="noopener noreferrer">mad-agentic</a>
           </span>
           <span className="text-gray-300 dark:text-gray-700">&middot;</span>
           <a href="https://github.com/mad-agentic/Agent-SaveMark" className="text-[#0096C7] hover:text-[#0077A8] dark:text-sky-400 transition-colors cursor-pointer" target="_blank" rel="noopener noreferrer">GitHub</a>
           <span className="text-gray-300 dark:text-gray-700">&middot;</span>
-          <a href="https://buymeacoffee.com/prakersh" className="text-[#0096C7] hover:text-[#0077A8] dark:text-sky-400 transition-colors cursor-pointer" target="_blank" rel="noopener noreferrer">Support</a>
+          <a href="https://buymeacoffee.com/mad-agent" className="text-[#0096C7] hover:text-[#0077A8] dark:text-sky-400 transition-colors cursor-pointer" target="_blank" rel="noopener noreferrer">Support</a>
         </div>
       </div>
     </footer>

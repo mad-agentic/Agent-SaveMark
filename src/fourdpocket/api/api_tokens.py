@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field, field_validator
 from sqlmodel import Session, col, select
 
@@ -13,7 +13,7 @@ from fourdpocket.api.api_token_utils import (
     compute_expiry,
     generate_token,
 )
-from fourdpocket.api.deps import get_current_user, get_db
+from fourdpocket.api.deps import get_current_user, get_current_user_pat_aware, get_db
 from fourdpocket.models.api_token import ApiToken, ApiTokenCollection
 from fourdpocket.models.base import ApiTokenRole, UserRole
 from fourdpocket.models.collection import Collection
@@ -67,6 +67,22 @@ class TokenRead(BaseModel):
 
 class TokenCreateResponse(TokenRead):
     token: str = Field(description="Plaintext token — shown ONCE. Store securely.")
+
+
+class TokenTestResponse(BaseModel):
+    ok: bool
+    message: str
+    user_id: uuid.UUID | None = None
+    username: str | None = None
+    token_name: str | None = None
+    role: ApiTokenRole | None = None
+    all_collections: bool | None = None
+    collection_ids: list[uuid.UUID] = Field(default_factory=list)
+    include_uncollected: bool | None = None
+    allow_deletion: bool | None = None
+    admin_scope: bool | None = None
+    expires_at: datetime | None = None
+    mcp_url: str | None = None
 
 
 # ─── Helpers ──────────────────────────────────────────────────
@@ -175,6 +191,42 @@ def list_tokens(
     return [_to_read(db, t) for t in rows]
 
 
+@router.post("/test-mcp", response_model=TokenTestResponse)
+def test_mcp_token(
+    request: Request,
+    identity: tuple[User, ApiToken | None] = Depends(get_current_user_pat_aware),
+    db: Session = Depends(get_db),
+):
+    """Validate a PAT intended for MCP and return effective scope details.
+
+    The caller must send ``Authorization: Bearer fdp_pat_...``. JWT auth is
+    rejected so the UI can distinguish "logged into the app" from "valid MCP token".
+    """
+    user, pat = identity
+    if pat is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Provide a personal access token (fdp_pat_...) in the Authorization header.",
+        )
+
+    mcp_url = str(request.base_url).rstrip("/") + "/mcp"
+    return TokenTestResponse(
+        ok=True,
+        message="MCP token is valid and can authenticate successfully.",
+        user_id=user.id,
+        username=user.username,
+        token_name=pat.name,
+        role=pat.role,
+        all_collections=pat.all_collections,
+        collection_ids=_token_collection_ids(db, pat.id),
+        include_uncollected=pat.include_uncollected,
+        allow_deletion=pat.allow_deletion,
+        admin_scope=pat.admin_scope,
+        expires_at=pat.expires_at,
+        mcp_url=mcp_url,
+    )
+
+
 @router.delete("/{token_id}", status_code=status.HTTP_204_NO_CONTENT)
 def revoke_token(
     token_id: uuid.UUID,
@@ -191,6 +243,34 @@ def revoke_token(
         token.revoked_at = datetime.now(timezone.utc)
         db.add(token)
         db.commit()
+    return None
+
+
+@router.delete("/{token_id}/purge", status_code=status.HTTP_204_NO_CONTENT)
+def purge_token(
+    token_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Permanently delete a revoked token and its ACL rows."""
+    token = db.get(ApiToken, token_id)
+    if token is None or token.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Token not found"
+        )
+    if token.revoked_at is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Revoke the token before removing it permanently.",
+        )
+
+    rows = db.exec(
+        select(ApiTokenCollection).where(ApiTokenCollection.token_id == token.id)
+    ).all()
+    for row in rows:
+        db.delete(row)
+    db.delete(token)
+    db.commit()
     return None
 
 

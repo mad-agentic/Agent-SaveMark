@@ -6,7 +6,7 @@ services:
     ports:
       - "${FDP_PORT:-4040}:4040"
     environment:
-      - FDP_DATABASE__URL=postgresql://4dp:${POSTGRES_PASSWORD:-4dp}@db:5432/Agent-SaveMark
+      - FDP_DATABASE__URL=postgresql://agent:${POSTGRES_PASSWORD:-agent}@db:5432/Agent-SaveMark
       - FDP_SEARCH__BACKEND=${SEARCH_BACKEND:-sqlite}
       - FDP_SEARCH__MEILI_URL=http://meilisearch:7700
       - FDP_SEARCH__MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-changeme-in-production}
@@ -26,7 +26,7 @@ services:
       - FDP_RERANK__ENABLED=${RERANK_ENABLED:-false}
       - FDP_ENRICHMENT__EXTRACT_ENTITIES=${EXTRACT_ENTITIES:-false}
     volumes:
-      - 4dp-data:/data
+      - agent-data:/data
     depends_on:
       db:
         condition: service_healthy
@@ -38,7 +38,7 @@ services:
     build: .
     command: ["worker"]
     environment:
-      - FDP_DATABASE__URL=postgresql://4dp:${POSTGRES_PASSWORD:-4dp}@db:5432/Agent-SaveMark
+      - FDP_DATABASE__URL=postgresql://agent:${POSTGRES_PASSWORD:-agent}@db:5432/Agent-SaveMark
       - FDP_SEARCH__BACKEND=${SEARCH_BACKEND:-sqlite}
       - FDP_SEARCH__MEILI_URL=http://meilisearch:7700
       - FDP_SEARCH__MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-changeme-in-production}
@@ -55,7 +55,7 @@ services:
       - FDP_RERANK__ENABLED=${RERANK_ENABLED:-false}
       - FDP_ENRICHMENT__EXTRACT_ENTITIES=${EXTRACT_ENTITIES:-false}
     volumes:
-      - 4dp-data:/data
+      - agent-data:/data
     depends_on:
       db:
         condition: service_healthy
@@ -65,13 +65,13 @@ services:
   db:
     image: pgvector/pgvector:pg16
     environment:
-      - POSTGRES_USER=4dp
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-4dp}
+      - POSTGRES_USER=agent
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-agent}
       - POSTGRES_DB=Agent-SaveMark
     volumes:
-      - 4dp-postgres:/var/lib/postgresql/data
+      - agent-postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U 4dp -d Agent-SaveMark"]
+      test: ["CMD-SHELL", "pg_isready -U agent -d Agent-SaveMark"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -84,7 +84,7 @@ services:
     environment:
       - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-changeme-in-production}
     volumes:
-      - 4dp-meili:/meili_data
+      - agent-meili:/meili_data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
       interval: 10s
@@ -97,7 +97,7 @@ services:
     image: chromadb/chroma:latest
     profiles: ["vectors"]
     volumes:
-      - 4dp-chroma:/chroma/chroma
+      - agent-chroma:/chroma/chroma
     restart: unless-stopped
 
   # ─── Ollama (optional, enable with: docker compose --profile ai up) ─
@@ -105,12 +105,12 @@ services:
     image: ollama/ollama:latest
     profiles: ["ai"]
     volumes:
-      - 4dp-ollama:/root/.ollama
+      - agent-ollama:/root/.ollama
     restart: unless-stopped
 
 volumes:
-  4dp-data:
-  4dp-postgres:
-  4dp-meili:
-  4dp-chroma:
-  4dp-ollama:
+  agent-data:
+  agent-postgres:
+  agent-meili:
+  agent-chroma:
+  agent-ollama:

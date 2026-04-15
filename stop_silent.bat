@@ -16,7 +16,7 @@ call :stopByPidFile "%BACKEND_PID_FILE%" "Backend"
 call :stopByPidFile "%FRONTEND_PID_FILE%" "Frontend"
 
 call :stopByPort 4040 "Backend"
-call :stopByPort 5173 "Frontend"
+call :stopByPort 4041 "Frontend"
 
 echo.
 echo Done.

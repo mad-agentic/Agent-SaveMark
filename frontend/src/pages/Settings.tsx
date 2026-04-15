@@ -76,6 +76,11 @@ export default function Settings() {
   const [passwordError, setPasswordError] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [showDeleteForm, setShowDeleteForm] = useState(false);
+  const mcpUrl = typeof window !== "undefined" && window.location.port === "4041"
+    ? `${window.location.protocol}//${window.location.hostname}:4040/mcp`
+    : typeof window !== "undefined"
+      ? `${window.location.origin}/mcp`
+      : "http://localhost:4040/mcp";
 
   useEffect(() => {
     if (currentUser) {
@@ -485,6 +490,42 @@ export default function Settings() {
         {/* MCP reference panel (no token embedded — user pastes theirs) */}
         <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-5">
           <McpSetupPanel token={null} />
+        </div>
+
+        {/* Claude Desktop guide */}
+        <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-5">
+          <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">
+            How to use with Claude Desktop
+          </h2>
+          <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+            Use this checklist after creating a PAT token in API Tokens & MCP.
+          </p>
+
+          <ol className="list-decimal ml-4 space-y-1 text-xs text-gray-700 dark:text-gray-300">
+            <li>Open Claude Desktop, then go to Settings → Developer → Edit Config.</li>
+            <li>Paste this config (replace YOUR_TOKEN_HERE with your plaintext PAT):</li>
+          </ol>
+
+          <pre className="mt-2 mb-3 rounded-lg bg-gray-900 dark:bg-black text-gray-100 text-xs p-3 overflow-x-auto whitespace-pre-wrap break-all">{`{
+  "mcpServers": {
+    "Agent-SaveMark": {
+      "url": "${mcpUrl}",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN_HERE"
+      }
+    }
+  }
+}`}</pre>
+
+          <ol className="list-decimal ml-4 space-y-1 text-xs text-gray-700 dark:text-gray-300">
+            <li>Quit Claude Desktop completely and reopen it.</li>
+            <li>In this page, run Test MCP Connection with the same token to verify token scope.</li>
+            <li>In Claude chat, ask: Use Agent-SaveMark to list my collections.</li>
+          </ol>
+
+          <div className="mt-3 rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/20 p-3 text-xs text-amber-800 dark:text-amber-300">
+            If Claude says Agent-SaveMark is unavailable, common fixes are: wrong port (use 4040, not 4041), invalid/revoked token, or Claude Desktop not fully restarted.
+          </div>
         </div>
 
         {/* About */}

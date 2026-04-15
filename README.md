@@ -32,7 +32,7 @@ Everyone saves things — bookmarks, articles, videos, code snippets, social pos
 
 **Agent-SaveMark** is not a bookmark manager. It's a **knowledge base that thinks**. Paste a URL — the system extracts the full content, auto-tags it, generates a summary, connects it to what you already know, and makes it instantly searchable. Notes, highlights, collections, reading lists, RSS feeds, and automation rules turn it into a second brain.
 
-Inspired by Doraemon's 4D Pocket — a magical, bottomless pocket where anything you've ever saved is instantly retrievable.
+Inspired by Doraemon's Agent Pocket — a magical, bottomless pocket where anything you've ever saved is instantly retrievable.
 
 | Principle | What It Means |
 |-----------|--------------|
@@ -58,7 +58,7 @@ docker pull ghcr.io/mad-agentic/Agent-SaveMark:0.2.0
 
 **One-liner (SQLite, no external services):**
 ```bash
-docker run -d --name Agent-SaveMark -p 4040:4040 -v 4dp-data:/data \
+docker run -d --name Agent-SaveMark -p 4040:4040 -v agent-data:/data \
   ghcr.io/mad-agentic/Agent-SaveMark:latest
 ```
 
@@ -147,7 +147,7 @@ make dev                    # → http://localhost:4040
 Agent-SaveMark start --reload     # → http://localhost:4040
 
 # Frontend (separate terminal)
-cd frontend && pnpm install && pnpm dev   # → http://localhost:5173
+cd frontend && pnpm install && pnpm dev   # → http://localhost:4041
 ```
 
 No login needed in single-user mode.
@@ -158,12 +158,12 @@ Run the app from source while using Docker for PostgreSQL, Meilisearch, or Ollam
 
 ```bash
 # Start PostgreSQL with pgvector (enables vector search without ChromaDB)
-docker run -d --name 4dp-postgres -p 5432:5432 \
-  -e POSTGRES_USER=4dp -e POSTGRES_PASSWORD=4dp -e POSTGRES_DB=Agent-SaveMark \
+docker run -d --name agent-postgres -p 5432:5432 \
+  -e POSTGRES_USER=agent -e POSTGRES_PASSWORD=agent -e POSTGRES_DB=Agent-SaveMark \
   pgvector/pgvector:pg16
 
 # Run backend against PostgreSQL with multi-user auth
-FDP_DATABASE__URL=postgresql://4dp:4dp@localhost:5432/Agent-SaveMark \
+FDP_DATABASE__URL=postgresql://agent:agent@localhost:5432/Agent-SaveMark \
 FDP_AUTH__MODE=multi make dev
 ```
 
@@ -701,4 +701,4 @@ GNU General Public License v3.0 — see [LICENSE](LICENSE) for details.
 
 ---
 
-> Reference: This project is developed with inspiration from https://github.com/onllm-dev/4DPocket.
+> Reference: This project is developed with inspiration from https://github.com/onllm-dev/agentocket.

@@ -18,9 +18,9 @@
     <meta name="title" content="Agent-SaveMark - Self-hosted AI knowledge base for everything you read">
     <meta name="description" content="Save content from 17+ platforms. AI auto-tags, summarizes, and connects it. Find anything instantly. Self-hosted, private, open source (GPLv3).">
     <meta name="keywords" content="self-hosted knowledge base, AI bookmarks, pocket alternative, local-first AI, personal knowledge management, second brain, open source, Ollama, semantic search, FastAPI, React">
-    <meta name="author" content="onllm.dev">
+    <meta name="author" content="mad-agentic">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://Agent-SaveMark.onllm.dev/">
+    <link rel="canonical" href="https://Agent-SaveMark.mad-agentic/">
     <link rel="icon" type="image/png" href="/assets/favicon.png">
     <link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="/assets/icons/icon-512.png">
@@ -29,10 +29,10 @@
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://Agent-SaveMark.onllm.dev/">
+    <meta property="og:url" content="https://Agent-SaveMark.mad-agentic/">
     <meta property="og:title" content="Agent-SaveMark - Self-hosted AI knowledge base">
     <meta property="og:description" content="Reach into your pocket, pull out exactly what you need. Save from 17+ platforms, AI tags and summarizes automatically, find anything instantly.">
-    <meta property="og:image" content="https://Agent-SaveMark.onllm.dev/assets/og-image.png">
+    <meta property="og:image" content="https://Agent-SaveMark.mad-agentic/assets/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="Agent-SaveMark">
@@ -40,10 +40,10 @@
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="https://Agent-SaveMark.onllm.dev/">
+    <meta name="twitter:url" content="https://Agent-SaveMark.mad-agentic/">
     <meta name="twitter:title" content="Agent-SaveMark - Self-hosted AI knowledge base">
     <meta name="twitter:description" content="Reach into your pocket, pull out exactly what you need. Save from 17+ platforms, AI tags and summarizes automatically, find anything instantly.">
-    <meta name="twitter:image" content="https://Agent-SaveMark.onllm.dev/assets/og-image.png">
+    <meta name="twitter:image" content="https://Agent-SaveMark.mad-agentic/assets/og-image.png">
 
     <!-- Structured Data / Schema.org -->
     <script type="application/ld+json">
@@ -52,7 +52,7 @@
         "@type": "SoftwareApplication",
         "name": "Agent-SaveMark",
         "alternateName": "Agent-SaveMark",
-        "url": "https://Agent-SaveMark.onllm.dev",
+        "url": "https://Agent-SaveMark.mad-agentic",
         "description": "Self-hosted AI-powered personal knowledge base. Save content from 17+ platforms. AI auto-tags, summarizes, and connects it. Find anything instantly.",
         "applicationCategory": "ProductivityApplication",
         "operatingSystem": "Cross-platform (Python 3.12+, Docker, Linux, macOS, Windows)",
@@ -64,8 +64,8 @@
         },
         "publisher": {
             "@type": "Organization",
-            "name": "onllm.dev",
-            "url": "https://onllm.dev"
+            "name": "mad-agentic",
+            "url": "https://mad-agentic"
         },
         "softwareVersion": "0.1.6",
         "downloadUrl": "https://github.com/mad-agentic/Agent-SaveMark/releases/latest",
@@ -92,7 +92,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
     <!-- Family design system -->
-    <link rel="stylesheet" href="https://onllm.dev/assets/css/main.css">
+    <link rel="stylesheet" href="https://mad-agentic/assets/css/main.css">
     <!-- Agent-SaveMark overrides + page styles -->
     <link rel="stylesheet" href="/styles.css">
 </head>
@@ -105,7 +105,7 @@
     <div class="nav-inner">
         <a href="/" class="brand" aria-label="Agent-SaveMark home">
             <img src="/assets/icons/icon-192.png" alt="" class="brand-mark" width="38" height="38">
-            <span class="brand-name"><span class="brand-accent">4d</span>pocket</span>
+            <span class="brand-name"><span class="brand-accent">Agent</span>pocket</span>
         </a>
 
         <div class="nav-links" id="nav-links">
@@ -121,7 +121,7 @@
                     <span class="nav-star-value">--</span>
                 </span>
             </a>
-            <a href="https://buymeacoffee.com/prakersh" class="nav-support" target="_blank" rel="noopener" aria-label="Support Agent-SaveMark">
+            <a href="https://buymeacoffee.com/mad-agent" class="nav-support" target="_blank" rel="noopener" aria-label="Support Agent-SaveMark">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
                 Support
             </a>
@@ -356,9 +356,9 @@
                 <p>Single container, SQLite, no other services. Just works.</p>
                 <div class="install-block">
                     <code><span class="prompt">$</span>docker run -d -p 4040:4040 \
-  -v 4dp-data:/data \
+  -v agent-data:/data \
   ghcr.io/mad-agentic/Agent-SaveMark:latest</code>
-                    <button class="copy-btn" data-copy="docker run -d -p 4040:4040 -v 4dp-data:/data ghcr.io/mad-agentic/Agent-SaveMark:latest" aria-label="Copy command">
+                    <button class="copy-btn" data-copy="docker run -d -p 4040:4040 -v agent-data:/data ghcr.io/mad-agentic/Agent-SaveMark:latest" aria-label="Copy command">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                     </button>
                 </div>
@@ -473,14 +473,14 @@
         <div class="footer-inner">
             <div class="footer-brand">
                 <img src="/assets/icons/icon-192.png" alt="" class="footer-brand-icon" width="20" height="20">
-                <span><span class="brand-accent">4d</span>pocket</span>
+                <span><span class="brand-accent">Agent</span>pocket</span>
             </div>
             <div class="footer-links">
                 <a href="https://github.com/mad-agentic/Agent-SaveMark" class="footer-link" target="_blank" rel="noopener">GitHub</a>
                 <a href="https://github.com/mad-agentic/Agent-SaveMark#readme" class="footer-link" target="_blank" rel="noopener">Docs</a>
                 <a href="https://github.com/mad-agentic/Agent-SaveMark/releases" class="footer-link" target="_blank" rel="noopener">Releases</a>
                 <a href="/privacy.html" class="footer-link">Privacy</a>
-                <a href="https://buymeacoffee.com/prakersh" class="footer-link" target="_blank" rel="noopener">Support</a>
+                <a href="https://buymeacoffee.com/mad-agent" class="footer-link" target="_blank" rel="noopener">Support</a>
             </div>
             <div class="footer-copy">&copy; 2026 Agent-SaveMark &middot; Open source under GPLv3</div>
         </div>

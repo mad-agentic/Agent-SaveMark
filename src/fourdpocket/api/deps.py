@@ -22,7 +22,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=F
 
 def _get_token_from_request(
     token: str | None = Depends(oauth2_scheme),
-    cookie_token: str | None = Cookie(default=None, alias="4dp_token"),
+    cookie_token: str | None = Cookie(default=None, alias="agent_token"),
 ) -> str | None:
     """Support token from either Bearer header or httpOnly cookie."""
     return token or cookie_token

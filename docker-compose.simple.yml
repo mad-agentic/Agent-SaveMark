@@ -16,8 +16,8 @@ services:
       - FDP_STORAGE__BASE_PATH=/data
       - FDP_SERVER__SECURE_COOKIES=false
     volumes:
-      - 4dp-data:/data
+      - agent-data:/data
     restart: unless-stopped
 
 volumes:
-  4dp-data:
+  agent-data:

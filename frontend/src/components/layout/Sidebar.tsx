@@ -65,7 +65,7 @@ function SidebarLogo() {
       <circle cx="256" cy="280" r="160" fill="white"/>
       <path d="M176 300 Q176 380 256 380 Q336 380 336 300" fill="none" stroke="#0096C7" strokeWidth="8" strokeLinecap="round"/>
       <path d="M196 300 Q196 260 256 260 Q316 260 316 300" fill="#F0F9FF" stroke="#0096C7" strokeWidth="4"/>
-      <text x="230" y="240" fontFamily="Inter, Arial, sans-serif" fontWeight="900" fontSize="64" fill="#0096C7">4D</text>
+      <text x="230" y="240" fontFamily="Inter, Arial, sans-serif" fontWeight="900" fontSize="64" fill="#0096C7">Agent</text>
       <circle cx="256" cy="340" r="16" fill="#FCD34D" stroke="#D97706" strokeWidth="2"/>
       <line x1="256" y1="340" x2="256" y2="356" stroke="#D97706" strokeWidth="2"/>
       <circle cx="256" cy="196" r="12" fill="#EF4444"/>
@@ -138,7 +138,7 @@ export function Sidebar() {
           <div className="flex items-center gap-1.5 overflow-hidden">
             <SidebarLogo />
             <div className="flex items-baseline gap-1">
-              <span className="font-bold text-lg text-[#0096C7] leading-none">4D</span>
+              <span className="font-bold text-lg text-[#0096C7] leading-none">Agent</span>
               <span className="font-semibold text-lg text-gray-800 dark:text-gray-100 leading-none">Pocket</span>
             </div>
             <BellIcon />

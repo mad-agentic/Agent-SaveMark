@@ -1,7 +1,7 @@
 # Agent-SaveMark — Product Requirements Document (PRD)
 
 > *"Reach into your pocket and pull out exactly what you need."*
-> Inspired by Doraemon's 4D Pocket — a magical, bottomless pocket where anything you've ever saved is instantly retrievable.
+> Inspired by Doraemon's Agent Pocket — a magical, bottomless pocket where anything you've ever saved is instantly retrievable.
 
 ---
 
@@ -507,7 +507,7 @@ Agent-SaveMark is fundamentally a **per-user knowledge base**, not a shared data
 - **macOS Menubar App**: Python + `rumps` or Swift wrapper. Quick capture from any app.
 - **Android App**: React Native or Kotlin
 - **iOS App**: React Native or Swift
-- **CLI Tool**: `4dp save <url>`, `4dp search <query>`, `4dp list`
+- **CLI Tool**: `agent save <url>`, `agent search <query>`, `agent list`
 
 ---
 
@@ -1007,14 +1007,14 @@ services:
     ports:
       - "4040:4040"
     environment:
-      - DATABASE_URL=postgresql://4dp:4dp@db:5432/Agent-SaveMark
+      - DATABASE_URL=postgresql://agent:agent@db:5432/Agent-SaveMark
       - MEILI_URL=http://meilisearch:7700
       - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
       - OLLAMA_URL=http://ollama:11434
       - SECRET_KEY=${SECRET_KEY}
       - STORAGE_PATH=/data
     volumes:
-      - 4dp-data:/data
+      - agent-data:/data
     depends_on:
       - db
       - meilisearch
@@ -1022,28 +1022,28 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      - POSTGRES_USER=4dp
-      - POSTGRES_PASSWORD=4dp
+      - POSTGRES_USER=agent
+      - POSTGRES_PASSWORD=agent
       - POSTGRES_DB=Agent-SaveMark
     volumes:
-      - 4dp-postgres:/var/lib/postgresql/data
+      - agent-postgres:/var/lib/postgresql/data
 
   meilisearch:
     image: getmeili/meilisearch:v1.12
     environment:
       - MEILI_MASTER_KEY=${MEILI_MASTER_KEY}
     volumes:
-      - 4dp-meili:/meili_data
+      - agent-meili:/meili_data
 
   chromadb:
     image: chromadb/chroma:latest
     volumes:
-      - 4dp-chroma:/chroma/chroma
+      - agent-chroma:/chroma/chroma
 
   ollama:
     image: ollama/ollama:latest
     volumes:
-      - 4dp-ollama:/root/.ollama
+      - agent-ollama:/root/.ollama
     # Uncomment for GPU support:
     # deploy:
     #   resources:
@@ -1055,21 +1055,21 @@ services:
     image: Agent-SaveMark/Agent-SaveMark:latest
     command: ["Agent-SaveMark", "worker"]
     environment:
-      - DATABASE_URL=postgresql://4dp:4dp@db:5432/Agent-SaveMark
+      - DATABASE_URL=postgresql://agent:agent@db:5432/Agent-SaveMark
       - MEILI_URL=http://meilisearch:7700
       - OLLAMA_URL=http://ollama:11434
     volumes:
-      - 4dp-data:/data
+      - agent-data:/data
     depends_on:
       - db
       - meilisearch
 
 volumes:
-  4dp-data:
-  4dp-postgres:
-  4dp-meili:
-  4dp-chroma:
-  4dp-ollama:
+  agent-data:
+  agent-postgres:
+  agent-meili:
+  agent-chroma:
+  agent-ollama:
 ```
 
 ### 6.3 Configuration
@@ -1218,7 +1218,7 @@ secret_key = "auto-generated"
 ### Phase 3 — Platform Expansion (Weeks 9-12)
 - [ ] Browser extension (Chrome + Firefox) with highlight capture
 - [ ] macOS menubar app
-- [ ] CLI tool (`4dp` command)
+- [ ] CLI tool (`agent` command)
 - [ ] Read-it-later mode with TTS + progress tracking
 - [ ] Knowledge gaps detection + stale content flagging
 - [ ] Cross-platform connection detection (link graph)
@@ -1295,15 +1295,15 @@ Everything Karakeep has, we have:
 | **Rules Engine** | Condition-action | + AI-powered conditions + incoming webhooks + templates |
 | **Backup** | Basic | Scheduled + S3/WebDAV destinations |
 | **Reader Mode** | None | Full reader view + TTS + progress tracking |
-| **Theme** | Standard bookmark app | Doraemon's 4D Pocket — playful, magical, delightful UX |
+| **Theme** | Standard bookmark app | Doraemon's Agent Pocket — playful, magical, delightful UX |
 
 ---
 
-## 9. Design Language — "4D Pocket"
+## 9. Design Language — "Agent Pocket"
 
 ### Visual Identity
 - **Primary Color**: Doraemon Blue (`#0096C7`) with warm accents
-- **Mascot/Icon**: Stylized 4D pocket opening animation
+- **Mascot/Icon**: Stylized Agent pocket opening animation
 - **Typography**: Inter (UI) + JetBrains Mono (code)
 - **Design System**: Clean, rounded, friendly — not corporate. Micro-animations on save (item "drops" into pocket), search (items "fly out" of pocket)
 

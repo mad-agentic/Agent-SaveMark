@@ -8,7 +8,7 @@
  *   node tests/uat/routes.mjs
  *
  * Env:
- *   UAT_BASE_URL  (default http://localhost:5173)
+ *   UAT_BASE_URL  (default http://localhost:4041)
  *   UAT_USERNAME, UAT_PASSWORD   (required for protected routes)
  *   UAT_COLLECTION_UUID  (optional, for /collections/:id)
  *
@@ -48,7 +48,7 @@ function loadPlaywright() {
 
 const { chromium } = loadPlaywright();
 
-const BASE = process.env.UAT_BASE_URL || "http://localhost:5173";
+const BASE = process.env.UAT_BASE_URL || "http://localhost:4041";
 const USER = process.env.UAT_USERNAME || "mcptest1775996183";
 const PASS = process.env.UAT_PASSWORD || "Test-PAT-0.2.1!";
 const COLL = process.env.UAT_COLLECTION_UUID || "74f04949-8395-414d-aa77-6d2d9ea2ebf4";

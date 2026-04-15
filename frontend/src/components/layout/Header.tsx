@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Search, Plus, Sun, Moon, Monitor, Menu } from "lucide-react";
+import { Search, Plus, Sun, Moon, Monitor, Menu, MessageCircle } from "lucide-react";
 import { useUIStore } from "@/stores/ui-store";
 
 export function Header() {
@@ -38,8 +38,17 @@ export function Header() {
           onClick={() => {
             window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }));
           }}
-          className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 cursor-pointer"
+          className="w-full pl-9 pr-12 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all duration-200 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 cursor-pointer"
         />
+        <button
+          type="button"
+          onClick={() => navigate("/search#chatbox")}
+          title="Open AI Chatbox"
+          aria-label="Open AI Chatbox"
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-gray-500 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-950/40 transition-colors"
+        >
+          <MessageCircle size={16} />
+        </button>
       </div>
 
       <button

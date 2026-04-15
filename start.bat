@@ -61,7 +61,7 @@ popd
 echo [4/4] Starting services in two new terminals...
 echo.
 
-set "BACKEND_COMMAND=uv run uvicorn fourdpocket.main:app --port 4040"
+set "BACKEND_COMMAND=%ROOT%\.venv\Scripts\python.exe -m uvicorn fourdpocket.main:app --port 4040"
 if /I "%AUTH_MODE%"=="multi" goto :start_backend_multi
 if /I "%AUTH_MODE%"=="single" goto :start_backend_single
 goto :start_backend_auto
@@ -86,7 +86,7 @@ start "Agent-SaveMark Frontend" /D "%FRONTEND_DIR%" cmd /k "pnpm dev"
 
 echo Opening app URLs...
 start "" "http://localhost:4040"
-start "" "http://localhost:5173"
+start "" "http://localhost:4041"
 
 echo.
 echo Done. Keep both terminal windows open while developing.

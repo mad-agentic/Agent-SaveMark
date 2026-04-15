@@ -140,7 +140,7 @@ def login(
     cookie_settings = get_settings()
     is_secure = cookie_settings.server.secure_cookies
     response.set_cookie(
-        key="4dp_token",
+        key="agent_token",
         value=access_token,
         httponly=True,
         secure=is_secure,
@@ -158,7 +158,7 @@ def get_me(current_user: User = Depends(get_current_user)):
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(response: Response):
     """Clear the auth cookie."""
-    response.delete_cookie(key="4dp_token")
+    response.delete_cookie(key="agent_token")
     return None
 
 
@@ -215,7 +215,7 @@ def delete_me(
     Clears the auth cookie so the client lands on /login."""
     db.delete(current_user)
     db.commit()
-    response.delete_cookie(key="4dp_token")
+    response.delete_cookie(key="agent_token")
     return None
 
 

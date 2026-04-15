@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 from sqlmodel import Session, select
@@ -19,6 +20,47 @@ from fourdpocket.models.user import User
 router = APIRouter(prefix="/ai", tags=["ai"])
 
 
+class ChatSearchRequest(BaseModel):
+    """Payload for AI chat over the user's saved knowledge."""
+
+    message: str = Field(min_length=2, max_length=1000)
+    limit: int = Field(default=6, ge=1, le=12)
+    item_type: str | None = None
+    source_platform: str | None = None
+    is_favorite: bool | None = None
+    is_archived: bool | None = None
+    tag: str | None = None
+    after: str | None = None
+    before: str | None = None
+    model: str | None = Field(default=None, min_length=1, max_length=200)
+
+
+class ChatSearchSource(BaseModel):
+    item_id: str
+    title: str
+    url: str | None = None
+    snippet: str = ""
+
+
+class ChatSearchResponse(BaseModel):
+    answer: str
+    sources: list[ChatSearchSource]
+
+
+class ChatConfigResponse(BaseModel):
+    provider: str
+    active_model: str
+    available_models: list[str]
+    model_fetch_status: str
+    model_fetch_message: str | None = None
+
+
+def _search_result_value(result, key: str, default=None):
+    if isinstance(result, dict):
+        return result.get(key, default)
+    return getattr(result, key, default)
+
+
 @router.get("/status")
 def ai_status(_: User = Depends(get_current_user)):
     """Check AI provider availability."""
@@ -31,6 +73,145 @@ def ai_status(_: User = Depends(get_current_user)):
         "tag_confidence_threshold": settings.ai.tag_confidence_threshold,
         "tag_suggestion_threshold": settings.ai.tag_suggestion_threshold,
     }
+
+
+@router.get("/chat-config", response_model=ChatConfigResponse)
+def chat_config(_: User = Depends(get_current_user)):
+    """Return the active provider and selectable models for the chatbox."""
+    from fourdpocket.ai.chat_models import get_chat_model_metadata
+
+    return ChatConfigResponse(**get_chat_model_metadata())
+
+
+@router.post("/chat-search", response_model=ChatSearchResponse)
+def chat_search(
+    payload: ChatSearchRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Answer user questions using AI grounded in their saved items."""
+    from fourdpocket.ai.factory import get_chat_provider, get_resolved_ai_config
+    from fourdpocket.ai.sanitizer import sanitize_for_prompt
+    from fourdpocket.search import get_search_service
+    from fourdpocket.search.base import SearchFilters
+
+    question = sanitize_for_prompt(payload.message, max_length=1000).strip()
+    if not question:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Message is empty")
+
+    service = get_search_service()
+    filters = SearchFilters(
+        item_type=payload.item_type,
+        source_platform=payload.source_platform,
+        is_favorite=payload.is_favorite,
+        is_archived=payload.is_archived,
+        tags=[payload.tag] if payload.tag else None,
+        after=payload.after,
+        before=payload.before,
+    )
+
+    search_results = service.search(
+        db,
+        question,
+        current_user.id,
+        filters=filters,
+        limit=payload.limit,
+    )
+
+    if not search_results:
+        return ChatSearchResponse(
+            answer=(
+                "I could not find relevant items in your saved knowledge yet. "
+                "Try a more specific keyword, title, URL, or tag."
+            ),
+            sources=[],
+        )
+
+    item_ids = []
+    for result in search_results:
+        item_id = _search_result_value(result, "item_id")
+        if isinstance(item_id, str):
+            try:
+                item_id = uuid.UUID(item_id)
+            except ValueError:
+                continue
+        if isinstance(item_id, uuid.UUID):
+            item_ids.append(item_id)
+
+    items = db.exec(
+        select(KnowledgeItem).where(
+            KnowledgeItem.id.in_(item_ids),
+            KnowledgeItem.user_id == current_user.id,
+        )
+    ).all()
+    item_map = {item.id: item for item in items}
+
+    sources: list[ChatSearchSource] = []
+    context_blocks: list[str] = []
+    for idx, result in enumerate(search_results, start=1):
+        raw_id = _search_result_value(result, "item_id")
+        if isinstance(raw_id, str):
+            try:
+                raw_id = uuid.UUID(raw_id)
+            except ValueError:
+                continue
+        if raw_id not in item_map:
+            continue
+
+        item = item_map[raw_id]
+        snippet = _search_result_value(result, "content_snippet") or _search_result_value(result, "title_snippet") or ""
+        snippet = sanitize_for_prompt(str(snippet), max_length=350)
+        title = item.title or "Untitled"
+
+        sources.append(
+            ChatSearchSource(
+                item_id=str(item.id),
+                title=title,
+                url=item.url,
+                snippet=snippet,
+            )
+        )
+        context_blocks.append(
+            f"[{idx}] Title: {title}\n"
+            f"URL: {item.url or 'N/A'}\n"
+            f"Snippet: {snippet or 'N/A'}"
+        )
+
+    if not sources:
+        return ChatSearchResponse(
+            answer="I found candidates but could not build safe context. Please try another query.",
+            sources=[],
+        )
+
+    overrides = get_resolved_ai_config()
+    if payload.model:
+        overrides["chat_model"] = payload.model.strip()
+
+    chat_provider = get_chat_provider(overrides=overrides)
+    system_prompt = (
+        "You are the Agent-SaveMark assistant. "
+        "Answer only from the provided sources. "
+        "If evidence is insufficient, say so clearly. "
+        "Keep responses concise and useful."
+    )
+    prompt = (
+        f"User question:\n{question}\n\n"
+        "Use only the following saved sources:\n\n"
+        + "\n\n".join(context_blocks)
+        + "\n\n"
+        "Return a direct answer. If uncertain, mention what is missing."
+    )
+
+    answer = chat_provider.generate(prompt=prompt, system_prompt=system_prompt).strip()
+    if not answer:
+        fallback_lines = [f"- {s.title}" for s in sources[:5]]
+        answer = (
+            "I could not generate an AI summary right now. "
+            "Here are the most relevant saved items:\n"
+            + "\n".join(fallback_lines)
+        )
+
+    return ChatSearchResponse(answer=answer, sources=sources[: payload.limit])
 
 
 @router.post("/items/{item_id}/enrich")

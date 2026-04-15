@@ -34,7 +34,7 @@ pnpm install
 pnpm dev
 ```
 
-App runs at http://localhost:5173, API at http://localhost:4040/docs
+App runs at http://localhost:4041, API at http://localhost:4040/docs
 
 ### 4. First User (Multi-User Mode)
 
@@ -46,7 +46,7 @@ curl -X POST http://localhost:4040/api/v1/auth/register \
   -d '{"username":"admin","email":"admin@local","password":"admin1234","display_name":"Admin"}'
 ```
 
-Login at http://localhost:5173/login with `admin@local` / `admin1234`
+Login at http://localhost:4041/login with `admin@local` / `admin1234`
 
 ## Running Tests
 

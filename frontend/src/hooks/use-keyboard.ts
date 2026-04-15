@@ -31,7 +31,7 @@ export function useKeyboardShortcuts() {
         case "?":
           if (!e.metaKey && !e.ctrlKey) {
             e.preventDefault();
-            window.dispatchEvent(new CustomEvent("4dp:open-shortcuts"));
+            window.dispatchEvent(new CustomEvent("agent:open-shortcuts"));
           }
           break;
       }

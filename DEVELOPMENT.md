@@ -30,7 +30,7 @@ make dev
 cd frontend
 pnpm install
 pnpm dev
-# → Frontend running at http://localhost:5173
+# → Frontend running at http://localhost:4041
 ```
 
 That's it. SQLite database, FTS5 search, single-user mode, no login required.
@@ -43,16 +43,16 @@ Run the app from source but use Docker for databases and services. This is the r
 
 ```bash
 # Start PostgreSQL only
-docker run -d --name 4dp-postgres \
+docker run -d --name agent-postgres \
   -p 5432:5432 \
-  -e POSTGRES_USER=4dp \
-  -e POSTGRES_PASSWORD=4dp \
+  -e POSTGRES_USER=agent \
+  -e POSTGRES_PASSWORD=agent \
   -e POSTGRES_DB=Agent-SaveMark \
-  -v 4dp-postgres:/var/lib/postgresql/data \
+  -v agent-postgres:/var/lib/postgresql/data \
   postgres:16-alpine
 
 # Run backend against PostgreSQL
-FDP_DATABASE__URL=postgresql://4dp:4dp@localhost:5432/Agent-SaveMark \
+FDP_DATABASE__URL=postgresql://agent:agent@localhost:5432/Agent-SaveMark \
 FDP_AUTH__MODE=multi \
 make dev
 ```
@@ -61,20 +61,20 @@ make dev
 
 ```bash
 # Start services
-docker run -d --name 4dp-postgres \
+docker run -d --name agent-postgres \
   -p 5432:5432 \
-  -e POSTGRES_USER=4dp -e POSTGRES_PASSWORD=4dp -e POSTGRES_DB=Agent-SaveMark \
-  -v 4dp-postgres:/var/lib/postgresql/data \
+  -e POSTGRES_USER=agent -e POSTGRES_PASSWORD=agent -e POSTGRES_DB=Agent-SaveMark \
+  -v agent-postgres:/var/lib/postgresql/data \
   postgres:16-alpine
 
-docker run -d --name 4dp-meili \
+docker run -d --name agent-meili \
   -p 7700:7700 \
   -e MEILI_MASTER_KEY=devkey123 \
-  -v 4dp-meili:/meili_data \
+  -v agent-meili:/meili_data \
   getmeili/meilisearch:v1.12
 
 # Run backend
-FDP_DATABASE__URL=postgresql://4dp:4dp@localhost:5432/Agent-SaveMark \
+FDP_DATABASE__URL=postgresql://agent:agent@localhost:5432/Agent-SaveMark \
 FDP_SEARCH__BACKEND=meilisearch \
 FDP_SEARCH__MEILI_URL=http://localhost:7700 \
 FDP_SEARCH__MEILI_MASTER_KEY=devkey123 \
@@ -89,8 +89,8 @@ make dev
 ollama pull llama3.2
 
 # Or via Docker:
-docker run -d --name 4dp-ollama -p 11434:11434 -v 4dp-ollama:/root/.ollama ollama/ollama
-docker exec 4dp-ollama ollama pull llama3.2
+docker run -d --name agent-ollama -p 11434:11434 -v agent-ollama:/root/.ollama ollama/ollama
+docker exec agent-ollama ollama pull llama3.2
 
 # Run backend with Ollama
 FDP_AI__CHAT_PROVIDER=ollama \
@@ -249,7 +249,7 @@ rm -rf data/Agent-SaveMark.db*
 make dev
 
 # PostgreSQL: drop and recreate
-docker exec 4dp-postgres psql -U 4dp -c "DROP DATABASE Agent-SaveMark; CREATE DATABASE Agent-SaveMark;"
+docker exec agent-postgres psql -U agent -c "DROP DATABASE Agent-SaveMark; CREATE DATABASE Agent-SaveMark;"
 ```
 
 **Frontend not connecting to backend:**

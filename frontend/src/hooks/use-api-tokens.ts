@@ -55,6 +55,14 @@ export function useRevokeApiToken() {
   });
 }
 
+export function usePurgeApiToken() {
+  const qc = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: (tokenId) => api.del(`/api/v1/auth/tokens/${tokenId}/purge`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["api-tokens"] }),
+  });
+}
+
 export function useRevokeAllApiTokens() {
   const qc = useQueryClient();
   return useMutation<void, Error, void>({

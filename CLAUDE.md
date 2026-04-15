@@ -29,7 +29,7 @@ make lint                      # ruff check
 
 # Frontend (from frontend/)
 pnpm install                   # Install deps
-pnpm dev                       # Dev server on :5173
+pnpm dev                       # Dev server on :4041
 pnpm build                     # Production build (tsc + vite)
 
 # Multi-user mode

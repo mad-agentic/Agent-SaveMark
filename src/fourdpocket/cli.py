@@ -14,14 +14,14 @@ PID_DIR = DEFAULT_DATA_DIR / "run"
 LOG_DIR = DEFAULT_DATA_DIR / "logs"
 
 # Docker container names (same as app.sh)
-POSTGRES_CONTAINER = "4dp-postgres"
-MEILI_CONTAINER = "4dp-meili"
-CHROMA_CONTAINER = "4dp-chromadb"
-OLLAMA_CONTAINER = "4dp-ollama"
+POSTGRES_CONTAINER = "agent-postgres"
+MEILI_CONTAINER = "agent-meili"
+CHROMA_CONTAINER = "agent-chromadb"
+OLLAMA_CONTAINER = "agent-ollama"
 
 # Default PostgreSQL credentials
-PG_USER = os.environ.get("PG_USER", "4dp")
-PG_PASSWORD = os.environ.get("PG_PASSWORD", "4dp")
+PG_USER = os.environ.get("PG_USER", "agent")
+PG_PASSWORD = os.environ.get("PG_PASSWORD", "agent")
 PG_DB = os.environ.get("PG_DB", "Agent-SaveMark")
 PG_PORT = os.environ.get("PG_PORT", "5432")
 
@@ -250,7 +250,7 @@ def _start_docker_service(name, run_args, ready_check=None, timeout=30):
         _step(f"{name} already running")
         return True
 
-    label = name.replace("4dp-", "").capitalize()
+    label = name.replace("agent-", "").capitalize()
     _info(f"Starting {label}...")
 
     if _service_exists(name):
@@ -299,7 +299,7 @@ def _start_postgres():
         "-e", f"POSTGRES_USER={PG_USER}",
         "-e", f"POSTGRES_PASSWORD={PG_PASSWORD}",
         "-e", f"POSTGRES_DB={PG_DB}",
-        "-v", "4dp-postgres:/var/lib/postgresql/data",
+        "-v", "agent-postgres:/var/lib/postgresql/data",
         "postgres:16-alpine",
     ], ready_check=ready)
 
@@ -330,7 +330,7 @@ def _start_meilisearch():
     return _start_docker_service(MEILI_CONTAINER, [
         "-p", "7700:7700",
         "-e", f"MEILI_MASTER_KEY={meili_key}",
-        "-v", "4dp-meili:/meili_data",
+        "-v", "agent-meili:/meili_data",
         "getmeili/meilisearch:v1.12",
     ], ready_check=ready)
 
@@ -338,7 +338,7 @@ def _start_meilisearch():
 def _start_chromadb():
     return _start_docker_service(CHROMA_CONTAINER, [
         "-p", "8000:8000",
-        "-v", "4dp-chroma:/chroma/chroma",
+        "-v", "agent-chroma:/chroma/chroma",
         "chromadb/chroma:latest",
     ])
 
@@ -356,7 +356,7 @@ def _start_ollama():
 
     return _start_docker_service(OLLAMA_CONTAINER, [
         "-p", "11434:11434",
-        "-v", "4dp-ollama:/root/.ollama",
+        "-v", "agent-ollama:/root/.ollama",
         "ollama/ollama:latest",
     ])
 

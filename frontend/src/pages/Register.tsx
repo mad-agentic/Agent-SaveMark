@@ -94,7 +94,7 @@ export default function Register() {
         <div className="text-center mb-8">
           <DoraemonLogo />
           <div className="flex items-center justify-center gap-2 mb-2">
-            <span className="text-3xl font-bold text-[#0096C7]">4D</span>
+            <span className="text-3xl font-bold text-[#0096C7]">Agent</span>
             <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">Pocket</span>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 italic">

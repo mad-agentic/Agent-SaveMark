@@ -30,11 +30,11 @@ def test_cors_allows_configured_origin(client):
     response = client.options(
         "/api/v1/health",
         headers={
-            "Origin": "http://localhost:5173",
+            "Origin": "http://localhost:4041",
             "Access-Control-Request-Method": "GET",
         },
     )
-    assert response.headers.get("access-control-allow-origin") == "http://localhost:5173"
+    assert response.headers.get("access-control-allow-origin") == "http://localhost:4041"
 
 
 def test_cors_blocks_unknown_origin(client):

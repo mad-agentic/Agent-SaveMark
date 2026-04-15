@@ -68,7 +68,7 @@ echo [4/5] Checking running ports...
 set "BACKEND_PORT_BUSY="
 set "FRONTEND_PORT_BUSY="
 netstat -ano | findstr /R /C:":4040 .*LISTENING" >nul && set "BACKEND_PORT_BUSY=1"
-netstat -ano | findstr /R /C:":5173 .*LISTENING" >nul && set "FRONTEND_PORT_BUSY=1"
+netstat -ano | findstr /R /C:":4041 .*LISTENING" >nul && set "FRONTEND_PORT_BUSY=1"
 
 echo [5/5] Starting services in background (no extra terminal windows)...
 
@@ -77,14 +77,14 @@ if defined BACKEND_PORT_BUSY (
 ) else (
   if /I "%AUTH_MODE%"=="multi" (
     echo [INFO] Auth mode override: multi
-    for /f %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:FDP_STORAGE__BASE_PATH='%DATA_DIR%'; $env:FDP_DATABASE__URL='%DB_URL%'; $env:FDP_AUTH__MODE='multi'; $p=Start-Process -FilePath 'uv' -ArgumentList @('run','uvicorn','fourdpocket.main:app','--port','4040') -WorkingDirectory '%ROOT%' -WindowStyle Hidden -RedirectStandardOutput '%RUNTIME_DIR%\backend.log' -RedirectStandardError '%RUNTIME_DIR%\backend.err.log' -PassThru; $p.Id"') do set "BACKEND_PID=%%i"
+      for /f %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:FDP_STORAGE__BASE_PATH='%DATA_DIR%'; $env:FDP_DATABASE__URL='%DB_URL%'; $env:FDP_AUTH__MODE='multi'; $p=Start-Process -FilePath '%ROOT%\.venv\Scripts\python.exe' -ArgumentList @('-m','uvicorn','fourdpocket.main:app','--port','4040') -WorkingDirectory '%ROOT%' -WindowStyle Hidden -RedirectStandardOutput '%RUNTIME_DIR%\backend.log' -RedirectStandardError '%RUNTIME_DIR%\backend.err.log' -PassThru; $p.Id"') do set "BACKEND_PID=%%i"
   ) else (
     if /I "%AUTH_MODE%"=="single" (
       echo [INFO] Auth mode override: single
-      for /f %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:FDP_STORAGE__BASE_PATH='%DATA_DIR%'; $env:FDP_DATABASE__URL='%DB_URL%'; $env:FDP_AUTH__MODE='single'; $p=Start-Process -FilePath 'uv' -ArgumentList @('run','uvicorn','fourdpocket.main:app','--port','4040') -WorkingDirectory '%ROOT%' -WindowStyle Hidden -RedirectStandardOutput '%RUNTIME_DIR%\backend.log' -RedirectStandardError '%RUNTIME_DIR%\backend.err.log' -PassThru; $p.Id"') do set "BACKEND_PID=%%i"
+      for /f %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:FDP_STORAGE__BASE_PATH='%DATA_DIR%'; $env:FDP_DATABASE__URL='%DB_URL%'; $env:FDP_AUTH__MODE='single'; $p=Start-Process -FilePath '%ROOT%\.venv\Scripts\python.exe' -ArgumentList @('-m','uvicorn','fourdpocket.main:app','--port','4040') -WorkingDirectory '%ROOT%' -WindowStyle Hidden -RedirectStandardOutput '%RUNTIME_DIR%\backend.log' -RedirectStandardError '%RUNTIME_DIR%\backend.err.log' -PassThru; $p.Id"') do set "BACKEND_PID=%%i"
     ) else (
       echo [INFO] Auth mode: from .env (no override)
-      for /f %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:FDP_STORAGE__BASE_PATH='%DATA_DIR%'; $env:FDP_DATABASE__URL='%DB_URL%'; Remove-Item Env:FDP_AUTH__MODE -ErrorAction SilentlyContinue; $p=Start-Process -FilePath 'uv' -ArgumentList @('run','uvicorn','fourdpocket.main:app','--port','4040') -WorkingDirectory '%ROOT%' -WindowStyle Hidden -RedirectStandardOutput '%RUNTIME_DIR%\backend.log' -RedirectStandardError '%RUNTIME_DIR%\backend.err.log' -PassThru; $p.Id"') do set "BACKEND_PID=%%i"
+      for /f %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:FDP_STORAGE__BASE_PATH='%DATA_DIR%'; $env:FDP_DATABASE__URL='%DB_URL%'; Remove-Item Env:FDP_AUTH__MODE -ErrorAction SilentlyContinue; $p=Start-Process -FilePath '%ROOT%\.venv\Scripts\python.exe' -ArgumentList @('-m','uvicorn','fourdpocket.main:app','--port','4040') -WorkingDirectory '%ROOT%' -WindowStyle Hidden -RedirectStandardOutput '%RUNTIME_DIR%\backend.log' -RedirectStandardError '%RUNTIME_DIR%\backend.err.log' -PassThru; $p.Id"') do set "BACKEND_PID=%%i"
     )
   )
   if defined BACKEND_PID (
@@ -94,7 +94,7 @@ if defined BACKEND_PORT_BUSY (
 )
 
 if defined FRONTEND_PORT_BUSY (
-  echo [INFO] Port 5173 is already in use. Skipping frontend start.
+  echo [INFO] Port 4041 is already in use. Skipping frontend start.
 ) else (
   for /f %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=Start-Process -FilePath 'pnpm' -ArgumentList @('dev') -WorkingDirectory '%FRONTEND_DIR%' -WindowStyle Hidden -RedirectStandardOutput '%RUNTIME_DIR%\frontend.log' -RedirectStandardError '%RUNTIME_DIR%\frontend.err.log' -PassThru; $p.Id"') do set "FRONTEND_PID=%%i"
   if defined FRONTEND_PID (
@@ -112,7 +112,7 @@ echo   - %RUNTIME_DIR%\frontend.err.log
 echo.
 echo Opening app URLs...
 start "" "http://localhost:4040"
-start "" "http://localhost:5173"
+start "" "http://localhost:4041"
 echo.
 echo Done. Running in background.
 goto :eof
