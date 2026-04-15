@@ -12,7 +12,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: mad-agentic/Agent-SaveMark
+  IMAGE_NAME: mad-agentic/agent-savemark
 
 jobs:
   # ─── Extract version from tag ─────────────────────────────────

@@ -86,7 +86,7 @@ jobs:
           context: .
           push: false
           load: true
-          tags: Agent-SaveMark:ci
+          tags: agent-savemark:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -95,7 +95,7 @@ jobs:
           docker run -d --name agent-smoke -p 4040:4040 \
             -e FDP_DATABASE__URL=sqlite:////data/Agent-SaveMark.db \
             -e FDP_AUTH__MODE=single \
-            Agent-SaveMark:ci
+            agent-savemark:ci
 
           # Wait for health
           for i in $(seq 1 30); do
