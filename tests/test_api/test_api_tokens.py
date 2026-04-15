@@ -151,7 +151,7 @@ def test_generated_tokens_always_parse():
     collided with the ``fdp_pat_<prefix>_<secret>`` separator and made
     ~17% of tokens fail to resolve. Hex prefix must round-trip every time.
     """
-    from fourdpocket.api.api_token_utils import (
+    from agentpocket.api.api_token_utils import (
         TOKEN_PREFIX,
         _parse_prefix,
         generate_token,

@@ -77,14 +77,14 @@ if defined BACKEND_PORT_BUSY (
 ) else (
   if /I "%AUTH_MODE%"=="multi" (
     echo [INFO] Auth mode override: multi
-      for /f %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:FDP_STORAGE__BASE_PATH='%DATA_DIR%'; $env:FDP_DATABASE__URL='%DB_URL%'; $env:FDP_AUTH__MODE='multi'; $p=Start-Process -FilePath '%ROOT%\.venv\Scripts\python.exe' -ArgumentList @('-m','uvicorn','fourdpocket.main:app','--port','4040') -WorkingDirectory '%ROOT%' -WindowStyle Hidden -RedirectStandardOutput '%RUNTIME_DIR%\backend.log' -RedirectStandardError '%RUNTIME_DIR%\backend.err.log' -PassThru; $p.Id"') do set "BACKEND_PID=%%i"
+      for /f %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:FDP_STORAGE__BASE_PATH='%DATA_DIR%'; $env:FDP_DATABASE__URL='%DB_URL%'; $env:FDP_AUTH__MODE='multi'; $p=Start-Process -FilePath '%ROOT%\.venv\Scripts\python.exe' -ArgumentList @('-m','uvicorn','agentpocket.main:app','--port','4040') -WorkingDirectory '%ROOT%' -WindowStyle Hidden -RedirectStandardOutput '%RUNTIME_DIR%\backend.log' -RedirectStandardError '%RUNTIME_DIR%\backend.err.log' -PassThru; $p.Id"') do set "BACKEND_PID=%%i"
   ) else (
     if /I "%AUTH_MODE%"=="single" (
       echo [INFO] Auth mode override: single
-      for /f %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:FDP_STORAGE__BASE_PATH='%DATA_DIR%'; $env:FDP_DATABASE__URL='%DB_URL%'; $env:FDP_AUTH__MODE='single'; $p=Start-Process -FilePath '%ROOT%\.venv\Scripts\python.exe' -ArgumentList @('-m','uvicorn','fourdpocket.main:app','--port','4040') -WorkingDirectory '%ROOT%' -WindowStyle Hidden -RedirectStandardOutput '%RUNTIME_DIR%\backend.log' -RedirectStandardError '%RUNTIME_DIR%\backend.err.log' -PassThru; $p.Id"') do set "BACKEND_PID=%%i"
+      for /f %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:FDP_STORAGE__BASE_PATH='%DATA_DIR%'; $env:FDP_DATABASE__URL='%DB_URL%'; $env:FDP_AUTH__MODE='single'; $p=Start-Process -FilePath '%ROOT%\.venv\Scripts\python.exe' -ArgumentList @('-m','uvicorn','agentpocket.main:app','--port','4040') -WorkingDirectory '%ROOT%' -WindowStyle Hidden -RedirectStandardOutput '%RUNTIME_DIR%\backend.log' -RedirectStandardError '%RUNTIME_DIR%\backend.err.log' -PassThru; $p.Id"') do set "BACKEND_PID=%%i"
     ) else (
       echo [INFO] Auth mode: from .env (no override)
-      for /f %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:FDP_STORAGE__BASE_PATH='%DATA_DIR%'; $env:FDP_DATABASE__URL='%DB_URL%'; Remove-Item Env:FDP_AUTH__MODE -ErrorAction SilentlyContinue; $p=Start-Process -FilePath '%ROOT%\.venv\Scripts\python.exe' -ArgumentList @('-m','uvicorn','fourdpocket.main:app','--port','4040') -WorkingDirectory '%ROOT%' -WindowStyle Hidden -RedirectStandardOutput '%RUNTIME_DIR%\backend.log' -RedirectStandardError '%RUNTIME_DIR%\backend.err.log' -PassThru; $p.Id"') do set "BACKEND_PID=%%i"
+      for /f %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "$env:FDP_STORAGE__BASE_PATH='%DATA_DIR%'; $env:FDP_DATABASE__URL='%DB_URL%'; Remove-Item Env:FDP_AUTH__MODE -ErrorAction SilentlyContinue; $p=Start-Process -FilePath '%ROOT%\.venv\Scripts\python.exe' -ArgumentList @('-m','uvicorn','agentpocket.main:app','--port','4040') -WorkingDirectory '%ROOT%' -WindowStyle Hidden -RedirectStandardOutput '%RUNTIME_DIR%\backend.log' -RedirectStandardError '%RUNTIME_DIR%\backend.err.log' -PassThru; $p.Id"') do set "BACKEND_PID=%%i"
     )
   )
   if defined BACKEND_PID (

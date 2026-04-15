@@ -1,6 +1,6 @@
 """Configuration tests."""
 
-from fourdpocket.config import Settings, get_settings
+from agentpocket.config import Settings, get_settings
 
 
 def test_default_settings():

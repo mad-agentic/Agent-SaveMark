@@ -571,7 +571,7 @@ Agent-SaveMark/
 ├── Makefile                       # Dev convenience commands
 │
 ├── src/
-│   └── fourdpocket/               # Main Python package
+│   └── agentpocket/               # Main Python package
 │       ├── __init__.py
 │       ├── main.py                # FastAPI app entry point
 │       ├── config.py              # Settings via pydantic-settings

@@ -4,12 +4,12 @@
 import pytest
 from sqlmodel import Session
 
-from fourdpocket.models.item import KnowledgeItem
-from fourdpocket.models.user import User
-from fourdpocket.search.base import KeywordHit, SearchFilters, SearchResult, VectorHit
-from fourdpocket.search.reranker import NullReranker
-from fourdpocket.search.service import SearchService
-from fourdpocket.search.sqlite_fts import index_item
+from agentpocket.models.item import KnowledgeItem
+from agentpocket.models.user import User
+from agentpocket.search.base import KeywordHit, SearchFilters, SearchResult, VectorHit
+from agentpocket.search.reranker import NullReranker
+from agentpocket.search.service import SearchService
+from agentpocket.search.sqlite_fts import index_item
 
 
 @pytest.fixture
@@ -53,7 +53,7 @@ def search_items(db: Session, search_user):
 class TestSearchService:
     def test_keyword_only_search(self, db: Session, search_user, search_items):
         """SearchService returns results from keyword backend."""
-        from fourdpocket.search.backends.sqlite_fts_backend import SqliteFtsBackend
+        from agentpocket.search.backends.sqlite_fts_backend import SqliteFtsBackend
 
         # Minimal vector backend that returns nothing
         class NoOpVector:
@@ -74,7 +74,7 @@ class TestSearchService:
                     for r in results)
 
     def test_search_returns_search_result_type(self, db: Session, search_user, search_items):
-        from fourdpocket.search.backends.sqlite_fts_backend import SqliteFtsBackend
+        from agentpocket.search.backends.sqlite_fts_backend import SqliteFtsBackend
 
         class NoOpVector:
             def upsert_item(self, *a, **kw): pass
@@ -97,7 +97,7 @@ class TestSearchService:
         assert isinstance(r.sources, list)
 
     def test_search_with_filters(self, db: Session, search_user, search_items):
-        from fourdpocket.search.backends.sqlite_fts_backend import SqliteFtsBackend
+        from agentpocket.search.backends.sqlite_fts_backend import SqliteFtsBackend
 
         class NoOpVector:
             def upsert_item(self, *a, **kw): pass
@@ -117,7 +117,7 @@ class TestSearchService:
         assert len(results) == 0
 
     def test_index_item(self, db: Session, search_user):
-        from fourdpocket.search.backends.sqlite_fts_backend import SqliteFtsBackend
+        from agentpocket.search.backends.sqlite_fts_backend import SqliteFtsBackend
 
         class NoOpVector:
             def upsert_item(self, *a, **kw): pass
@@ -144,7 +144,7 @@ class TestSearchService:
         assert len(results) >= 1
 
     def test_rrf_fusion(self, db: Session, search_user):
-        from fourdpocket.search.backends.sqlite_fts_backend import SqliteFtsBackend
+        from agentpocket.search.backends.sqlite_fts_backend import SqliteFtsBackend
 
         class NoOpVector:
             def upsert_item(self, *a, **kw): pass

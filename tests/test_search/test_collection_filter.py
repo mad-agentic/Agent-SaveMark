@@ -4,10 +4,10 @@ import uuid
 
 from sqlmodel import Session
 
-from fourdpocket.models.collection import Collection, CollectionItem
-from fourdpocket.models.item import KnowledgeItem
-from fourdpocket.models.user import User
-from fourdpocket.search.base import SearchFilters
+from agentpocket.models.collection import Collection, CollectionItem
+from agentpocket.models.item import KnowledgeItem
+from agentpocket.models.user import User
+from agentpocket.search.base import SearchFilters
 
 
 def _add_item(db: Session, user_id: uuid.UUID, title: str, content: str) -> KnowledgeItem:
@@ -38,9 +38,9 @@ def _make_user(db: Session, email: str = "u@example.com") -> User:
 
 
 def test_search_applies_allowed_item_ids(db):
-    from fourdpocket.search.backends.sqlite_fts_backend import SqliteFtsBackend
-    from fourdpocket.search.service import SearchService
-    from fourdpocket.search.sqlite_fts import index_item
+    from agentpocket.search.backends.sqlite_fts_backend import SqliteFtsBackend
+    from agentpocket.search.service import SearchService
+    from agentpocket.search.sqlite_fts import index_item
 
     user = _make_user(db)
     keep = _add_item(db, user.id, "Keep", "python programming")
@@ -71,9 +71,9 @@ def test_search_applies_allowed_item_ids(db):
 
 
 def test_search_applies_collection_id(db):
-    from fourdpocket.search.backends.sqlite_fts_backend import SqliteFtsBackend
-    from fourdpocket.search.service import SearchService
-    from fourdpocket.search.sqlite_fts import index_item
+    from agentpocket.search.backends.sqlite_fts_backend import SqliteFtsBackend
+    from agentpocket.search.service import SearchService
+    from agentpocket.search.sqlite_fts import index_item
 
     user = _make_user(db, email="c@example.com")
     a = _add_item(db, user.id, "Alpha", "shared keyword")

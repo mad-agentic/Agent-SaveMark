@@ -128,7 +128,7 @@ The Huey worker processes background tasks: content fetching, AI enrichment, med
 
 ```bash
 # Run worker (separate terminal)
-uv run python -m huey.bin.huey_consumer fourdpocket.workers.huey --workers 2
+uv run python -m huey.bin.huey_consumer agentpocket.workers.huey --workers 2
 ```
 
 Without the worker, AI enrichment runs inline (synchronous) when `FDP_AI__SYNC_ENRICHMENT=true` (default).
@@ -159,7 +159,7 @@ pnpm lint           # ESLint
 
 ```
 Agent-SaveMark/
-├── src/fourdpocket/           # Python backend
+├── src/agentpocket/           # Python backend
 │   ├── api/                   # FastAPI routers (auth, items, notes, search, etc.)
 │   ├── models/                # SQLModel database tables
 │   ├── processors/            # 17 platform-specific content extractors

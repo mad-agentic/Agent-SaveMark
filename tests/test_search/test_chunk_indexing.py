@@ -5,11 +5,11 @@ import uuid
 import pytest
 from sqlmodel import Session
 
-from fourdpocket.models.item import KnowledgeItem
-from fourdpocket.models.item_chunk import ItemChunk
-from fourdpocket.models.user import User
-from fourdpocket.search.chunking import chunk_text
-from fourdpocket.search.sqlite_fts import (
+from agentpocket.models.item import KnowledgeItem
+from agentpocket.models.item_chunk import ItemChunk
+from agentpocket.models.user import User
+from agentpocket.search.chunking import chunk_text
+from agentpocket.search.sqlite_fts import (
     delete_chunks,
     index_chunks,
     search_chunks,

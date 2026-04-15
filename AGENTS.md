@@ -1,99 +1,43 @@
-# Agent-SaveMark - Setup & Testing Guide
+# Project Guidelines
 
-## Quick Start
+## Build and Test
 
-### Prerequisites
+- Backend env: Python 3.12+ with `uv`.
+- Frontend env: Node.js 18+ with `pnpm`.
+- Install backend deps: `uv sync --all-extras`.
+- Run backend locally: `uv run uvicorn agentpocket.main:app --port 4040`.
+- Run frontend locally: `cd frontend && pnpm install && pnpm dev`.
+- Preferred backend test run: `uv run pytest tests/ -x -q`.
+- Frontend verification: `cd frontend && pnpm build`.
+- Lint: `make lint`.
 
-- Python 3.12+ with [uv](https://docs.astral.sh/uv/)
-- Node.js 18+ with pnpm
-- Optional: Ollama (local AI), Docker (full stack)
+## Architecture
 
-### 1. Backend Setup
+- Backend package namespace is `agentpocket` under `src/agentpocket`.
+- Backend stack: FastAPI + SQLModel + sync route handlers. Prefer `def` handlers over `async def` unless the surrounding code already requires async behavior.
+- Frontend stack: React 19 + TypeScript + Vite + Tailwind v4.
+- Search is chunk-based hybrid retrieval. Preserve the separation between API, AI, search backends, workers, and models.
+- AI provider configuration is centralized through `agentpocket.config` and `agentpocket.ai.factory`.
+- MCP support is a first-class feature. Changes touching auth, tokens, or tool exposure should consider `/mcp` behavior.
 
-```bash
-git clone https://github.com/mad-agentic/Agent-SaveMark.git
-cd Agent-SaveMark
-uv sync --all-extras
-```
+## Conventions
 
-### 2. Start Backend
+- Keep branding as `Agent-SaveMark`; only use `agentpocket` for Python module imports and runtime entry points.
+- Follow existing backend patterns: direct SQLModel usage, explicit user scoping, and env-driven config with `FDP_` prefixes.
+- Do not introduce `axios`, `litellm`, `langchain`, `passlib`, or `python-jose`.
+- Sanitize user-provided content before sending it to LLM prompts.
+- Preserve the current frontend data flow: native `fetch`, TanStack Query for server state, Zustand for lightweight client state.
+- Prefer small, targeted edits. Do not refactor adjacent code unless the change requires it.
 
-```bash
-# Single-user mode (no login)
-uv run uvicorn fourdpocket.main:app --port 4040
+## Docs
 
-# Multi-user mode (with auth)
-FDP_AUTH__MODE=multi uv run uvicorn fourdpocket.main:app --port 4040
-```
+- Start with `README.md` for product overview, install modes, CLI usage, and MCP setup.
+- Use `DEVELOPMENT.md` for local development workflows and environment combinations.
+- Use `CLAUDE.md` for codebase structure, stack decisions, and project-specific do/don't rules.
+- For deeper implementation notes, see `docs/plans/pat-mcp-synthesis.md` and `docs/plans/search-architecture-enhancements.md`.
 
-### 3. Frontend Setup
+## Pitfalls
 
-```bash
-cd frontend
-pnpm install
-pnpm dev
-```
-
-App runs at http://localhost:4041, API at http://localhost:4040/docs
-
-### 4. First User (Multi-User Mode)
-
-First registered user auto-becomes admin:
-
-```bash
-curl -X POST http://localhost:4040/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","email":"admin@local","password":"admin1234","display_name":"Admin"}'
-```
-
-Login at http://localhost:4041/login with `admin@local` / `admin1234`
-
-## Running Tests
-
-```bash
-# Backend (183 tests, in-memory SQLite)
-uv run pytest tests/ -x -q
-
-# Frontend type check
-cd frontend && pnpm build
-
-# Lint
-make lint
-```
-
-## Configuration
-
-All via env vars with `FDP_` prefix. Key settings:
-
-```bash
-FDP_AUTH__MODE=single           # single (no login) or multi (JWT auth)
-FDP_AI__CHAT_PROVIDER=ollama    # ollama, groq, or nvidia
-FDP_SEARCH__BACKEND=sqlite      # sqlite (FTS5) or meilisearch
-FDP_DATABASE__URL=sqlite:///data/Agent-SaveMark.db
-```
-
-See `.env.example` for full reference.
-
-## Docker (Full Stack)
-
-```bash
-cp .env.example .env
-docker compose up
-```
-
-Includes: app, worker, PostgreSQL, Meilisearch, ChromaDB, Ollama.
-
-## MCP Server (Agent Integration)
-
-The server mounts a FastMCP streamable-HTTP endpoint at `/mcp`. Mint a PAT in **Settings → API Tokens & MCP**, point Claude Desktop / Cursor / Claude Code at `http://localhost:4040/mcp` with `Authorization: Bearer fdp_pat_...`, and you get 10 tools: `save_knowledge`, `search_knowledge`, `get_knowledge`, `update_knowledge`, `refresh_knowledge`, `delete_knowledge`, `list_collections`, `add_to_collection`, `get_entity`, `get_related_entities`. See README for client config snippets.
-
-## Architecture Notes
-
-- 17 content processors auto-detect platform from URL
-- AI enrichment runs as Huey background task (sync fallback if worker unavailable)
-- Search: chunk-level hybrid — FTS5/Meilisearch + ChromaDB/pgvector + RRF + optional cross-encoder reranking
-- PATs (`fdp_pat_*`) authenticate MCP clients with per-token collection ACL + role (viewer/editor) + optional `allow_deletion` / `admin_scope`
-- Entity synthesis: per-entity structured JSON wiki pages regenerated on threshold (default 3 new mentions, 24h throttle)
-- All user data is scoped per-user. Sharing creates references, not copies.
-- Rules engine executes on item creation (condition-action pattern)
-- PWA with share target: share URLs from phone directly to Agent-SaveMark
+- Generated directories such as `.venv`, `.runtime`, `frontend/dist`, `frontend/node_modules`, and extension build output can contain stale references; do not treat them as source of truth.
+- Database-backed artifacts may preserve historical content. Verify whether a string match is in code, generated cache, or persisted user data before editing it.
+- If a change touches both frontend and backend contracts, verify both `pnpm build` and at least targeted backend tests before concluding.

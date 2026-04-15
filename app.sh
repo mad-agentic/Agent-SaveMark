@@ -296,11 +296,11 @@ start_backend() {
     cd "$SCRIPT_DIR"
 
     if [ "$mode" = "dev" ]; then
-        uv run uvicorn fourdpocket.main:app \
+        uv run uvicorn agentpocket.main:app \
             --host 0.0.0.0 --port "$port" --reload \
             > "$BACKEND_LOG" 2>&1 &
     else
-        uv run uvicorn fourdpocket.main:app \
+        uv run uvicorn agentpocket.main:app \
             --host 0.0.0.0 --port "$port" \
             > "$BACKEND_LOG" 2>&1 &
     fi
@@ -374,13 +374,13 @@ kill_stale_workers() {
         tracked_pid=$(cat "$WORKER_PID_FILE" 2>/dev/null || echo "")
     fi
     local stale
-    stale=$(pgrep -f "fourdpocket.workers.huey_worker" 2>/dev/null | grep -v "^${tracked_pid:-__none__}$" || true)
+    stale=$(pgrep -f "agentpocket.workers.huey_worker" 2>/dev/null | grep -v "^${tracked_pid:-__none__}$" || true)
     if [ -n "$stale" ]; then
         warn "Found stale Huey worker process(es): $(echo "$stale" | tr '\n' ' ')"
         echo "$stale" | xargs kill 2>/dev/null || true
         sleep 1
         local survivors
-        survivors=$(pgrep -f "fourdpocket.workers.huey_worker" 2>/dev/null | grep -v "^${tracked_pid:-__none__}$" || true)
+        survivors=$(pgrep -f "agentpocket.workers.huey_worker" 2>/dev/null | grep -v "^${tracked_pid:-__none__}$" || true)
         [ -n "$survivors" ] && echo "$survivors" | xargs kill -9 2>/dev/null || true
         step "Cleaned up stale workers"
     fi
@@ -400,7 +400,7 @@ start_worker() {
     info "Starting Huey background worker..."
     cd "$SCRIPT_DIR"
 
-    uv run python -m fourdpocket.workers.huey_worker \
+    uv run python -m agentpocket.workers.huey_worker \
         --workers "${HUEY_WORKERS:-2}" --worker-type thread \
         > "$WORKER_LOG" 2>&1 &
 
@@ -1045,7 +1045,7 @@ do_db() {
         init)
             info "Initializing database..."
             cd "$SCRIPT_DIR"
-            uv run python -c "from fourdpocket.db.session import init_db; init_db(); print('Done.')"
+            uv run python -c "from agentpocket.db.session import init_db; init_db(); print('Done.')"
             success "Database tables created."
             ;;
 
@@ -1079,7 +1079,7 @@ do_db() {
 
                 cd "$SCRIPT_DIR"
                 FDP_DATABASE__URL="$db_url" uv run python -c \
-                    "from fourdpocket.db.session import init_db; init_db()"
+                    "from agentpocket.db.session import init_db; init_db()"
                 success "PostgreSQL database '$pg_db_name' reset and reinitialized."
             else
                 local db_path
@@ -1088,7 +1088,7 @@ do_db() {
                 rm -f "$db_path" "${db_path}-journal" "${db_path}-shm" "${db_path}-wal"
 
                 cd "$SCRIPT_DIR"
-                uv run python -c "from fourdpocket.db.session import init_db; init_db()"
+                uv run python -c "from agentpocket.db.session import init_db; init_db()"
                 success "SQLite database reset and reinitialized."
             fi
             ;;

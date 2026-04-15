@@ -3,9 +3,9 @@
 import pytest
 from sqlmodel import Session, select
 
-from fourdpocket.ai.canonicalizer import canonicalize_entity
-from fourdpocket.models.entity import Entity, EntityAlias
-from fourdpocket.models.user import User
+from agentpocket.ai.canonicalizer import canonicalize_entity
+from agentpocket.models.entity import Entity, EntityAlias
+from agentpocket.models.user import User
 
 
 @pytest.fixture

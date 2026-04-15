@@ -1,17 +1,17 @@
-"""Tool-level tests — exercise the pure Python functions in fourdpocket.mcp.tools."""
+"""Tool-level tests — exercise the pure Python functions in agentpocket.mcp.tools."""
 
 import uuid
 
 import pytest
 from sqlmodel import Session
 
-from fourdpocket.api.api_token_utils import generate_token
-from fourdpocket.mcp import tools
-from fourdpocket.models.api_token import ApiToken, ApiTokenCollection
-from fourdpocket.models.base import ApiTokenRole
-from fourdpocket.models.collection import Collection, CollectionItem
-from fourdpocket.models.item import KnowledgeItem
-from fourdpocket.models.user import User
+from agentpocket.api.api_token_utils import generate_token
+from agentpocket.mcp import tools
+from agentpocket.models.api_token import ApiToken, ApiTokenCollection
+from agentpocket.models.base import ApiTokenRole
+from agentpocket.models.collection import Collection, CollectionItem
+from agentpocket.models.item import KnowledgeItem
+from agentpocket.models.user import User
 
 
 def _user(db: Session, email: str) -> User:
@@ -219,9 +219,9 @@ def test_delete_cascades_through_enrichment_rows(db):
     must be cascade-deleted. Bare ``db.delete(item)`` would trigger SQLite
     FOREIGN KEY violations — delete_knowledge must use the shared cascade helper.
     """
-    from fourdpocket.models.embedding import Embedding
-    from fourdpocket.models.enrichment import EnrichmentStage
-    from fourdpocket.models.item_chunk import ItemChunk
+    from agentpocket.models.embedding import Embedding
+    from agentpocket.models.enrichment import EnrichmentStage
+    from agentpocket.models.item_chunk import ItemChunk
 
     user = _user(db, "delcascade@x.com")
     pat = _pat(db, user.id, role=ApiTokenRole.editor, allow_deletion=True)
@@ -283,7 +283,7 @@ def test_add_to_collection_happy_path(db):
 
 
 def test_search_knowledge_scope(db):
-    from fourdpocket.search.sqlite_fts import index_item
+    from agentpocket.search.sqlite_fts import index_item
 
     user = _user(db, "se@x.com")
     pat = _pat(db, user.id, all_collections=False, include_uncollected=False)
@@ -307,7 +307,7 @@ def test_search_knowledge_scope(db):
 
 
 def test_search_in_collection_by_name(db):
-    from fourdpocket.search.sqlite_fts import index_item
+    from agentpocket.search.sqlite_fts import index_item
 
     user = _user(db, "sic-n@x.com")
     pat = _pat(db, user.id, all_collections=True, include_uncollected=True)
@@ -334,7 +334,7 @@ def test_search_in_collection_by_name(db):
 
 
 def test_search_in_collection_by_id(db):
-    from fourdpocket.search.sqlite_fts import index_item
+    from agentpocket.search.sqlite_fts import index_item
 
     user = _user(db, "sic-id@x.com")
     pat = _pat(db, user.id, all_collections=True, include_uncollected=True)

@@ -6,11 +6,11 @@ from datetime import datetime, timedelta, timezone
 
 from sqlmodel import Session
 
-from fourdpocket.api.api_token_utils import generate_token
-from fourdpocket.mcp.auth import PATTokenVerifier
-from fourdpocket.models.api_token import ApiToken
-from fourdpocket.models.base import ApiTokenRole
-from fourdpocket.models.user import User
+from agentpocket.api.api_token_utils import generate_token
+from agentpocket.mcp.auth import PATTokenVerifier
+from agentpocket.models.api_token import ApiToken
+from agentpocket.models.base import ApiTokenRole
+from agentpocket.models.user import User
 
 
 def _make_user(db: Session, email="auth@example.com") -> User:
@@ -51,7 +51,7 @@ def _run(coro):
 
 def test_verify_valid_token(engine):
     # Use a session that shares the test engine
-    import fourdpocket.db.session as db_module
+    import agentpocket.db.session as db_module
 
     orig = db_module._engine
     db_module._engine = engine
@@ -72,7 +72,7 @@ def test_verify_valid_token(engine):
 
 
 def test_verify_invalid_token(engine):
-    import fourdpocket.db.session as db_module
+    import agentpocket.db.session as db_module
 
     orig = db_module._engine
     db_module._engine = engine
@@ -84,7 +84,7 @@ def test_verify_invalid_token(engine):
 
 
 def test_verify_revoked_token(engine):
-    import fourdpocket.db.session as db_module
+    import agentpocket.db.session as db_module
 
     orig = db_module._engine
     db_module._engine = engine
@@ -102,7 +102,7 @@ def test_verify_revoked_token(engine):
 
 
 def test_verify_expired_token(engine):
-    import fourdpocket.db.session as db_module
+    import agentpocket.db.session as db_module
 
     orig = db_module._engine
     db_module._engine = engine
@@ -121,7 +121,7 @@ def test_verify_expired_token(engine):
 
 
 def test_verify_scopes_reflect_flags(engine):
-    import fourdpocket.db.session as db_module
+    import agentpocket.db.session as db_module
 
     orig = db_module._engine
     db_module._engine = engine

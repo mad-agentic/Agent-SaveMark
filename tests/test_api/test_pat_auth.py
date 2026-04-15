@@ -90,7 +90,7 @@ def test_admin_endpoint_allows_admin_scope_pat(client, auth_headers):
 def test_pat_after_user_disabled_rejected(client, auth_headers, db):
     from sqlmodel import select
 
-    from fourdpocket.models.user import User
+    from agentpocket.models.user import User
 
     token = _mint(client, auth_headers)
 

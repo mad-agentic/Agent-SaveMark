@@ -22,7 +22,7 @@ Self-hosted AI-powered personal knowledge base. Save content from 17+ platforms,
 ```bash
 # Backend
 uv sync --all-extras          # Install deps
-uv run uvicorn fourdpocket.main:app --port 4040  # Run server
+uv run uvicorn agentpocket.main:app --port 4040  # Run server
 uv run pytest tests/ -x -q    # Run tests (183 tests)
 make test                      # Run tests (alias)
 make lint                      # ruff check
@@ -33,7 +33,7 @@ pnpm dev                       # Dev server on :4041
 pnpm build                     # Production build (tsc + vite)
 
 # Multi-user mode
-FDP_AUTH__MODE=multi uv run uvicorn fourdpocket.main:app --port 4040
+FDP_AUTH__MODE=multi uv run uvicorn agentpocket.main:app --port 4040
 ```
 
 ## Versioning
@@ -46,7 +46,7 @@ All three version files must stay in sync when bumping:
 ## Project Structure
 
 ```
-src/fourdpocket/
+src/agentpocket/
   api/          # FastAPI routers (26 files, including entities)
   models/       # SQLModel tables (26 tables: items, chunks, entities, relations, enrichment, LLM cache, ...)
   processors/   # 17 platform extractors (BaseProcessor + @register_processor)
@@ -107,7 +107,7 @@ Item Created → enrich_item_v2()
 - **ACL flags**: `role` (viewer|editor), `all_collections`, `collection_ids`, `include_uncollected`, `allow_deletion`, `admin_scope`, `expires_at`
 - **Resolver**: `api/deps.py:_resolve_identity` detects `Bearer fdp_pat_...` and routes through `api_token_utils.resolve_token`; falls back to JWT otherwise
 - **Admin guard**: `require_admin` rejects PATs without `admin_scope=True` even when owner is admin
-- **MCP tools** (`src/fourdpocket/mcp/tools.py`): `save_knowledge`, `search_knowledge`, `get_knowledge`, `update_knowledge`, `refresh_knowledge`, `delete_knowledge` (gated by `allow_deletion`), `list_collections`, `add_to_collection`, `get_entity`, `get_related_entities`. Tool param name is `knowledge_id` (not `item_id`). Delete uses shared `cascade_delete_item()` helper in `api/items.py`.
+- **MCP tools** (`src/agentpocket/mcp/tools.py`): `save_knowledge`, `search_knowledge`, `get_knowledge`, `update_knowledge`, `refresh_knowledge`, `delete_knowledge` (gated by `allow_deletion`), `list_collections`, `add_to_collection`, `get_entity`, `get_related_entities`. Tool param name is `knowledge_id` (not `item_id`). Delete uses shared `cascade_delete_item()` helper in `api/items.py`.
 - **Synthesis**: per-entity structured JSON (`summary`, `themes`, `key_contexts`, `relationships`, `confidence`) regenerated when `item_count - synthesis_item_count >= threshold` AND `min_interval_hours` elapsed. Config: `FDP_ENRICHMENT__SYNTHESIS_*`
 
 ## Key Patterns

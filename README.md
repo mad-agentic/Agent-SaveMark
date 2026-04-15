@@ -131,7 +131,7 @@ Agent-SaveMark start --sqlite -d
 
 Open http://localhost:4040 — the setup wizard runs automatically on first start if no config exists.
 
-> **Note:** The PyPI package name is `Agent-SaveMark`, but the Python import is `fourdpocket` (Python identifiers can't start with a digit). Optional extras: `pip install Agent-SaveMark[postgres]`, `Agent-SaveMark[semantic]`, `Agent-SaveMark[processors]`, `Agent-SaveMark[all]`.
+> **Note:** The PyPI package name is `Agent-SaveMark`, but the Python import is `agentpocket` because Python module names cannot use hyphens. Optional extras: `pip install Agent-SaveMark[postgres]`, `Agent-SaveMark[semantic]`, `Agent-SaveMark[processors]`, `Agent-SaveMark[all]`.
 
 ### From Source (uv)
 
@@ -633,9 +633,9 @@ Interactive docs at http://localhost:4040/docs when running.
 
 ```
 Agent-SaveMark/
-├── src/fourdpocket/           # Python backend
+├── src/agentpocket/           # Python backend
 │   ├── cli.py                 # CLI entry point (Agent-SaveMark command)
-│   ├── __main__.py            # python -m fourdpocket support
+│   ├── __main__.py            # python -m agentpocket support
 │   ├── api/                   # 26 FastAPI routers (items, search, entities, AI, ...)
 │   ├── models/                # 26 SQLModel tables (items, chunks, entities, relations, ...)
 │   ├── processors/            # 17 platform extractors

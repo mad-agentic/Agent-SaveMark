@@ -74,17 +74,17 @@ All decisions locked via user Q&A before implementation.
 ## 4. Phase 1 — PAT Backend
 
 ### 4.1 New files
-- [x] `src/fourdpocket/models/api_token.py` — `ApiToken`, `ApiTokenCollection`
-- [x] `src/fourdpocket/api/api_token_utils.py` — generate, hash, verify, ACL helpers
-- [x] `src/fourdpocket/api/api_tokens.py` — CRUD endpoints at `/api/v1/auth/tokens`
+- [x] `src/agentpocket/models/api_token.py` — `ApiToken`, `ApiTokenCollection`
+- [x] `src/agentpocket/api/api_token_utils.py` — generate, hash, verify, ACL helpers
+- [x] `src/agentpocket/api/api_tokens.py` — CRUD endpoints at `/api/v1/auth/tokens`
 
 ### 4.2 Modified files
-- [x] `src/fourdpocket/models/base.py` — add `ApiTokenRole` enum
-- [x] `src/fourdpocket/models/__init__.py` — register new models
-- [x] `src/fourdpocket/api/deps.py` — handle `fdp_pat_*` in token resolution; add `get_current_user_pat_aware`, `require_role`, `require_delete_permission`, `require_admin_scope`
-- [x] `src/fourdpocket/api/router.py` — register api_tokens router
-- [x] `src/fourdpocket/search/base.py` — add `collection_id`, `allowed_item_ids` to `SearchFilters`
-- [x] `src/fourdpocket/search/service.py` — apply collection filter (post-retrieval intersect)
+- [x] `src/agentpocket/models/base.py` — add `ApiTokenRole` enum
+- [x] `src/agentpocket/models/__init__.py` — register new models
+- [x] `src/agentpocket/api/deps.py` — handle `fdp_pat_*` in token resolution; add `get_current_user_pat_aware`, `require_role`, `require_delete_permission`, `require_admin_scope`
+- [x] `src/agentpocket/api/router.py` — register api_tokens router
+- [x] `src/agentpocket/search/base.py` — add `collection_id`, `allowed_item_ids` to `SearchFilters`
+- [x] `src/agentpocket/search/service.py` — apply collection filter (post-retrieval intersect)
 
 ### 4.3 API endpoints
 - [x] `POST /api/v1/auth/tokens` — create; returns plaintext ONCE
@@ -123,14 +123,14 @@ All decisions locked via user Q&A before implementation.
 - [x] Add `mcp>=1.12` to `pyproject.toml` (installed 1.27.0)
 
 ### 5.2 New files
-- [x] `src/fourdpocket/mcp/__init__.py`
-- [x] `src/fourdpocket/mcp/server.py` — FastMCP instance, tool registration
-- [x] `src/fourdpocket/mcp/auth.py` — `PATTokenVerifier` implementing MCP `TokenVerifier`
-- [x] `src/fourdpocket/mcp/tools.py` — all 10 tool implementations as pure functions
-- [x] `src/fourdpocket/mcp/serializers.py` — `knowledge_detail`, `entity_with_synthesis`, `related_entity` serializers
+- [x] `src/agentpocket/mcp/__init__.py`
+- [x] `src/agentpocket/mcp/server.py` — FastMCP instance, tool registration
+- [x] `src/agentpocket/mcp/auth.py` — `PATTokenVerifier` implementing MCP `TokenVerifier`
+- [x] `src/agentpocket/mcp/tools.py` — all 10 tool implementations as pure functions
+- [x] `src/agentpocket/mcp/serializers.py` — `knowledge_detail`, `entity_with_synthesis`, `related_entity` serializers
 
 ### 5.3 Modified files
-- [x] `src/fourdpocket/main.py` — mount `mcp_app` at `/mcp`; lifespan guards against double-`run()` under pytest
+- [x] `src/agentpocket/main.py` — mount `mcp_app` at `/mcp`; lifespan guards against double-`run()` under pytest
 
 ### 5.4 Tool implementations
 - [x] `save_knowledge`
@@ -162,10 +162,10 @@ All decisions locked via user Q&A before implementation.
 ## 6. Phase 3 — Entity Synthesis
 
 ### 6.1 Model additions
-- [x] `src/fourdpocket/models/entity.py` — add `synthesis` (JSON column), `synthesis_generated_at` (nullable timestamptz), `synthesis_item_count` (default 0), `synthesis_confidence` (str, nullable)
+- [x] `src/agentpocket/models/entity.py` — add `synthesis` (JSON column), `synthesis_generated_at` (nullable timestamptz), `synthesis_item_count` (default 0), `synthesis_confidence` (str, nullable)
 
 ### 6.2 Config additions
-- [x] `src/fourdpocket/config.py` (`EnrichmentSettings`):
+- [x] `src/agentpocket/config.py` (`EnrichmentSettings`):
   - `synthesis_enabled: bool = True`
   - `synthesis_min_item_count: int = 3`
   - `synthesis_threshold: int = 3`
@@ -173,7 +173,7 @@ All decisions locked via user Q&A before implementation.
   - `synthesis_max_context_items: int = 20`
 
 ### 6.3 New files
-- [x] `src/fourdpocket/ai/synthesizer.py` — `synthesize_entity(entity_id, db) -> dict` returning structured JSON; `should_regenerate(entity) -> bool` for pipeline guard
+- [x] `src/agentpocket/ai/synthesizer.py` — `synthesize_entity(entity_id, db) -> dict` returning structured JSON; `should_regenerate(entity) -> bool` for pipeline guard
 
 ### 6.4 Synthesis JSON schema
 ```json
@@ -193,13 +193,13 @@ All decisions locked via user Q&A before implementation.
 ```
 
 ### 6.5 Pipeline integration
-- [x] `src/fourdpocket/workers/enrichment_pipeline.py`:
+- [x] `src/agentpocket/workers/enrichment_pipeline.py`:
   - Added `synthesized` to `STAGES`
   - Set `STAGE_DEPS["synthesized"] = ["entities_extracted"]`
   - New `handle_synthesis(db, item_id, user_id)`: iterates entities touched by this item, applies `should_regenerate` guard, calls `synthesize_entity` inline (runs under Huey when enabled, sync fallback otherwise)
 
 ### 6.6 API
-- [x] `src/fourdpocket/api/entities.py`:
+- [x] `src/agentpocket/api/entities.py`:
   - Surfaces `synthesis`, `synthesis_generated_at`, `synthesis_confidence`, `synthesis_item_count` in `/entities/{id}`
   - `has_synthesis` + `synthesis_confidence` in list view
   - `POST /api/v1/entities/{id}/synthesize?force=bool` — force regeneration with cooldown + min-count guards

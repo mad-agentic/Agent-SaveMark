@@ -311,7 +311,7 @@ CREATE INDEX idx_chunks_embedding ON item_chunks
 
 #### Chunker
 
-`src/fourdpocket/search/chunker.py` — 512 tokens with 64-token overlap, splits on paragraph → sentence → hard fallback. Uses tiktoken for accurate token counts.
+`src/agentpocket/search/chunker.py` — 512 tokens with 64-token overlap, splits on paragraph → sentence → hard fallback. Uses tiktoken for accurate token counts.
 
 #### Roll-up for display
 
@@ -325,7 +325,7 @@ Search returns chunk hits. Service layer groups by `item_id`, picks best chunk p
 
 #### Design
 
-`src/fourdpocket/search/reranker.py`:
+`src/agentpocket/search/reranker.py`:
 - `LocalReranker` — BGE reranker via sentence-transformers
 - `CloudReranker` — Cohere/Voyage
 - `NullReranker` — pass-through (default off)
@@ -395,7 +395,7 @@ CREATE TABLE enrichment_stages (
 
 #### Runner
 
-`src/fourdpocket/workers/enrichment.py` — Huey task with retries, per-stage status, resumable.
+`src/agentpocket/workers/enrichment.py` — Huey task with retries, per-stage status, resumable.
 
 #### Sync fallback
 
@@ -442,11 +442,11 @@ CREATE TABLE item_entities (
 
 #### Extractor
 
-`src/fourdpocket/ai/extractor.py` — Extracts entities and relations. Multi-pass with gleaning.
+`src/agentpocket/ai/extractor.py` — Extracts entities and relations. Multi-pass with gleaning.
 
 #### Canonicalization
 
-`src/fourdpocket/ai/canonicalizer.py` — Three-tier cascade:
+`src/agentpocket/ai/canonicalizer.py` — Three-tier cascade:
 1. Exact alias match
 2. Fuzzy + normalized (lowercase, strip punctuation)
 3. Embedding similarity (pgvector only)
@@ -508,7 +508,7 @@ Works in both SQLite and Postgres.
 
 ### LLM Response Caching
 
-**Files:** `src/fourdpocket/ai/llm_cache.py`, `src/fourdpocket/models/llm_cache.py`
+**Files:** `src/agentpocket/ai/llm_cache.py`, `src/agentpocket/models/llm_cache.py`
 
 All extraction results cached by content hash (`sha256(text)`). When the same chunk is processed twice:
 1. First time: call LLM, store result with hash key
@@ -518,7 +518,7 @@ Eliminates redundant LLM calls. TTL configurable, defaults to 30 days.
 
 ### Entity Description Merging
 
-**Files:** `src/fourdpocket/ai/canonicalizer.py`
+**Files:** `src/agentpocket/ai/canonicalizer.py`
 
 When an entity is seen in multiple documents, descriptions are merged:
 - Collect all descriptions from all mentions
@@ -528,7 +528,7 @@ When an entity is seen in multiple documents, descriptions are merged:
 
 ### Multi-Pass Entity Extraction (Gleaning)
 
-**Files:** `src/fourdpocket/ai/extractor.py`
+**Files:** `src/agentpocket/ai/extractor.py`
 
 Two-pass extraction:
 1. **First pass:** standard entity extraction prompt
@@ -538,7 +538,7 @@ Inspired by LightRAG's gleaning approach.
 
 ### Meilisearch Lazy Initialization
 
-**Files:** `src/fourdpocket/search/meilisearch_backend.py`
+**Files:** `src/agentpocket/search/meilisearch_backend.py`
 
 Initialization deferred until first use. If `FDP_SEARCH__MEILISEARCH_URL` is not set:
 - Meilisearch backend never starts
@@ -547,7 +547,7 @@ Initialization deferred until first use. If `FDP_SEARCH__MEILISEARCH_URL` is not
 
 ### Dynamic pgvector Dimension Detection
 
-**Files:** `src/fourdpocket/search/pgvector_backend.py`
+**Files:** `src/agentpocket/search/pgvector_backend.py`
 
 No need to pre-configure embedding dimension in config. First vector inserted auto-detects dimension and creates HNSW index:
 
@@ -562,7 +562,7 @@ CREATE INDEX idx_chunks_embedding ON item_chunks
 
 ### Item Deletion Cascade
 
-**Files:** `src/fourdpocket/models/`, `src/fourdpocket/api/items.py`
+**Files:** `src/agentpocket/models/`, `src/agentpocket/api/items.py`
 
 Deleting an item properly cascades through:
 - `item_chunks` — deleted via FK ON DELETE CASCADE
@@ -575,7 +575,7 @@ All cascades are atomic and user-scoped.
 
 ### Filter-Only Search Handling
 
-**Files:** `src/fourdpocket/search/hybrid.py`, `src/fourdpocket/api/search.py`
+**Files:** `src/agentpocket/search/hybrid.py`, `src/agentpocket/api/search.py`
 
 When user provides only filters (no keyword query, no vector embedding):
 - Skip keyword backend
@@ -590,7 +590,7 @@ Enables fast filtering on favorites, tags, dates without semantic processing.
 ## 9. Configuration Changes (cumulative)
 
 ```python
-# src/fourdpocket/config.py
+# src/agentpocket/config.py
 
 class SearchSettings(BaseModel):
     keyword_backend: Literal["sqlite_fts", "meilisearch"] = "sqlite_fts"

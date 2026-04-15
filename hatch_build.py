@@ -11,4 +11,4 @@ class CustomBuildHook(BuildHookInterface):
     def initialize(self, version, build_data):
         frontend_dist = os.path.join(self.root, "frontend", "dist")
         if os.path.isdir(frontend_dist):
-            build_data["force_include"][frontend_dist] = "fourdpocket/static"
+            build_data["force_include"][frontend_dist] = "agentpocket/static"

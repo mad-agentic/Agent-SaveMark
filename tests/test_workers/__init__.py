@@ -5,10 +5,10 @@ import uuid
 import pytest
 from sqlmodel import Session, select
 
-from fourdpocket.models.enrichment import EnrichmentStage
-from fourdpocket.models.item import KnowledgeItem
-from fourdpocket.models.user import User
-from fourdpocket.workers.enrichment_pipeline import (
+from agentpocket.models.enrichment import EnrichmentStage
+from agentpocket.models.item import KnowledgeItem
+from agentpocket.models.user import User
+from agentpocket.workers.enrichment_pipeline import (
     _deps_satisfied,
     _get_or_create_stage,
     _mark_done,
@@ -149,7 +149,7 @@ class TestHandleChunking:
     def test_chunks_created(self, db: Session, enrich_item, enrich_user):
         handle_chunking(db, enrich_item.id, enrich_user.id)
 
-        from fourdpocket.models.item_chunk import ItemChunk
+        from agentpocket.models.item_chunk import ItemChunk
 
         chunks = db.exec(
             select(ItemChunk).where(ItemChunk.item_id == enrich_item.id)
@@ -163,7 +163,7 @@ class TestHandleChunking:
         handle_chunking(db, enrich_item.id, enrich_user.id)
         handle_chunking(db, enrich_item.id, enrich_user.id)
 
-        from fourdpocket.models.item_chunk import ItemChunk
+        from agentpocket.models.item_chunk import ItemChunk
 
         chunks = db.exec(
             select(ItemChunk).where(ItemChunk.item_id == enrich_item.id)

@@ -61,7 +61,7 @@ popd
 echo [4/4] Starting services in two new terminals...
 echo.
 
-set "BACKEND_COMMAND=%ROOT%\.venv\Scripts\python.exe -m uvicorn fourdpocket.main:app --port 4040"
+set "BACKEND_COMMAND=%ROOT%\.venv\Scripts\python.exe -m uvicorn agentpocket.main:app --port 4040"
 if /I "%AUTH_MODE%"=="multi" goto :start_backend_multi
 if /I "%AUTH_MODE%"=="single" goto :start_backend_single
 goto :start_backend_auto

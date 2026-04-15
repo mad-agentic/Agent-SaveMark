@@ -72,7 +72,7 @@ Thank you for considering contributing to Agent-SaveMark! This guide will help y
 
 ## Adding a Platform Processor
 
-1. Create `src/fourdpocket/processors/your_platform.py`
+1. Create `src/agentpocket/processors/your_platform.py`
 2. Extend `BaseProcessor` and use `@register_processor` decorator
 3. Define URL patterns in `url_patterns`
 4. Implement `process(url)` returning a `ProcessorResult`

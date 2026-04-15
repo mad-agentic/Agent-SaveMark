@@ -24,7 +24,7 @@ dependencies = [
 ]
 
 [project.scripts]
-"Agent-SaveMark" = "fourdpocket.cli:main"
+"Agent-SaveMark" = "agentpocket.cli:main"
 
 [project.optional-dependencies]
 postgres = [
@@ -70,7 +70,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/fourdpocket"]
+packages = ["src/agentpocket"]
 
 [tool.hatch.build.hooks.custom]
 

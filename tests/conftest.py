@@ -5,8 +5,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
 
-import fourdpocket.models  # noqa: F401 — register all models before create_all
-from fourdpocket.config import get_settings
+import agentpocket.models  # noqa: F401 — register all models before create_all
+from agentpocket.config import get_settings
 
 
 @pytest.fixture(name="engine", scope="function")
@@ -20,7 +20,7 @@ def test_engine():
     SQLModel.metadata.create_all(engine)
 
     # Initialize FTS5 table for search tests
-    from fourdpocket.search.sqlite_fts import init_chunks_fts, init_fts
+    from agentpocket.search.sqlite_fts import init_chunks_fts, init_fts
 
     with Session(engine) as session:
         init_fts(session)
@@ -38,13 +38,13 @@ def test_db(engine):
 
 @pytest.fixture(name="client")
 def test_client(engine):
-    import fourdpocket.db.session as db_module
+    import agentpocket.db.session as db_module
 
     # Monkey-patch the engine so get_session() uses our test engine
     original_engine = db_module._engine
     db_module._engine = engine
 
-    from fourdpocket.main import app
+    from agentpocket.main import app
 
     # Force multi-user mode (requires explicit auth)
     settings = get_settings()
@@ -60,12 +60,12 @@ def test_client(engine):
     app.middleware_stack = app.build_middleware_stack()
 
     # Clear in-endpoint rate limiters between tests
-    import fourdpocket.api.auth as auth_module
+    import agentpocket.api.auth as auth_module
     if hasattr(auth_module, "_failed_login_attempts"):
         auth_module._failed_login_attempts.clear()
     if hasattr(auth_module, "_register_attempts"):
         auth_module._register_attempts.clear()
-    import fourdpocket.api.sharing as sharing_module
+    import agentpocket.api.sharing as sharing_module
     if hasattr(sharing_module, "_public_token_attempts"):
         sharing_module._public_token_attempts.clear()
 

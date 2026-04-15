@@ -5,10 +5,10 @@ from datetime import datetime, timedelta, timezone
 
 from sqlmodel import Session
 
-from fourdpocket.ai import synthesizer as synth
-from fourdpocket.models.entity import Entity, ItemEntity
-from fourdpocket.models.item import KnowledgeItem
-from fourdpocket.models.user import User
+from agentpocket.ai import synthesizer as synth
+from agentpocket.models.entity import Entity, ItemEntity
+from agentpocket.models.item import KnowledgeItem
+from agentpocket.models.user import User
 
 
 class _FakeChat:
@@ -220,7 +220,7 @@ def test_should_regenerate_threshold_and_interval_met(db):
 def test_force_regenerate_endpoint(client, auth_headers, db, monkeypatch):
     from sqlmodel import select
 
-    from fourdpocket.models.user import User as UserModel
+    from agentpocket.models.user import User as UserModel
 
     user = db.exec(
         select(UserModel).where(UserModel.email == "test@example.com")
@@ -254,7 +254,7 @@ def test_force_regenerate_endpoint(client, auth_headers, db, monkeypatch):
 def test_force_regenerate_returns_429_when_fresh(client, auth_headers, db, monkeypatch):
     from sqlmodel import select
 
-    from fourdpocket.models.user import User as UserModel
+    from agentpocket.models.user import User as UserModel
 
     user = db.exec(
         select(UserModel).where(UserModel.email == "test@example.com")

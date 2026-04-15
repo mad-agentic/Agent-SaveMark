@@ -1,6 +1,6 @@
 """Tests for the text chunking module."""
 
-from fourdpocket.search.chunking import Chunk, chunk_text
+from agentpocket.search.chunking import Chunk, chunk_text
 
 
 class TestChunkText:

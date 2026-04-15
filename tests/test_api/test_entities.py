@@ -2,8 +2,8 @@
 
 import uuid
 
-from fourdpocket.ai.canonicalizer import canonicalize_entity
-from fourdpocket.models.item import KnowledgeItem
+from agentpocket.ai.canonicalizer import canonicalize_entity
+from agentpocket.models.item import KnowledgeItem
 
 
 class TestEntitiesEndpoints:

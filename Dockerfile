@@ -51,10 +51,10 @@ ENV PATH="/app/.venv/bin:$PATH" \
     FDP_SERVER__PORT=4040
 
 # Create non-root user
-RUN groupadd -r fourdpocket && useradd -r -g fourdpocket -d /app fourdpocket \
-    && mkdir -p /data && chown -R fourdpocket:fourdpocket /app /data
+RUN groupadd -r agentpocket && useradd -r -g agentpocket -d /app agentpocket \
+    && mkdir -p /data && chown -R agentpocket:agentpocket /app /data
 
-USER fourdpocket
+USER agentpocket
 
 VOLUME /data
 EXPOSE 4040
