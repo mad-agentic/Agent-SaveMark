@@ -1,5 +1,6 @@
 """Application configuration via pydantic-settings."""
 
+import os
 import secrets
 
 # Load .env file into os.environ so nested settings classes pick up the values.
@@ -7,6 +8,7 @@ import secrets
 import sys as _sys
 from pathlib import Path
 
+from filelock import FileLock
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -24,9 +26,6 @@ def _get_or_create_secret_key() -> str:
     Uses file locking to prevent TOCTOU race conditions when multiple
     processes start simultaneously.
     """
-    import os
-    from filelock import FileLock
-
     env_key = os.environ.get("FDP_AUTH__SECRET_KEY")
     if env_key:
         return env_key

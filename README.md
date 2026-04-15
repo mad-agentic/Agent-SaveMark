@@ -701,4 +701,4 @@ GNU General Public License v3.0 — see [LICENSE](LICENSE) for details.
 
 ---
 
-> Reference: This project is developed with inspiration from https://github.com/onllm-dev/agentocket.
+> Reference: This project is developed with inspiration from https://github.com/onllm-dev/4DPocket.
