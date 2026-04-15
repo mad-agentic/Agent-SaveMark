@@ -239,8 +239,8 @@ jobs:
         working-directory: mcp-npm
         run: |
           VERSION="${{ needs.meta.outputs.version }}"
-          if npm view "@mad-agentic/Agent-SaveMark-mcp@$VERSION" version > /dev/null 2>&1; then
-            echo "@mad-agentic/Agent-SaveMark-mcp@$VERSION is already on npm — skipping publish."
+          if npm view "@mad-agentic/agent-savemark-mcp@$VERSION" version > /dev/null 2>&1; then
+            echo "@mad-agentic/agent-savemark-mcp@$VERSION is already on npm — skipping publish."
             exit 0
           fi
           npm publish --access public --provenance
@@ -302,7 +302,7 @@ jobs:
             Connect stdio-based MCP clients (Claude Desktop, Cursor, etc.) to your instance:
 
             ```bash
-            npx -y @mad-agentic/Agent-SaveMark-mcp --url https://your.pocket.tld --token fdp_pat_xxx
+            npx -y @mad-agentic/agent-savemark-mcp --url https://your.pocket.tld --token fdp_pat_xxx
             ```
 
             See [`mcp-npm/README.md`](https://github.com/mad-agentic/Agent-SaveMark/blob/${{ needs.meta.outputs.tag }}/mcp-npm/README.md) for full client config snippets.
