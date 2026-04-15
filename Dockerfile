@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 # ─── Stage 1: Frontend Build ────────────────────────────────────
 FROM node:22-alpine AS frontend
 
@@ -13,8 +15,12 @@ FROM python:3.12-slim AS builder
 WORKDIR /app
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
+ARG UV_SYNC_FLAGS="--no-dev --all-extras --frozen"
+ARG UV_SYNC_FALLBACK_FLAGS="--no-dev --all-extras"
+
 COPY pyproject.toml uv.lock* hatch_build.py ./
-RUN uv sync --no-dev --all-extras --frozen 2>/dev/null || uv sync --no-dev --all-extras
+RUN --mount=type=cache,target=/root/.cache/uv \
+    sh -c "uv sync ${UV_SYNC_FLAGS} 2>/dev/null || uv sync ${UV_SYNC_FALLBACK_FLAGS}"
 
 COPY src/ ./src/
 

@@ -87,6 +87,9 @@ jobs:
           push: false
           load: true
           tags: agent-savemark:ci
+          build-args: |
+            UV_SYNC_FLAGS=--no-dev --frozen
+            UV_SYNC_FALLBACK_FLAGS=--no-dev
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
