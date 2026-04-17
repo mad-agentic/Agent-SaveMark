@@ -1,6 +1,7 @@
 """FastAPI application entry point."""
 
 import logging
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -14,6 +15,11 @@ from agentpocket.config import get_settings
 from agentpocket.db.session import get_engine, init_db
 
 logger = logging.getLogger(__name__)
+
+
+def _should_spawn_huey_worker() -> bool:
+    value = os.environ.get("FDP_HUEY__SPAWN_WORKER", "true").strip().lower()
+    return value not in {"0", "false", "no", "off"}
 
 
 @asynccontextmanager
@@ -51,13 +57,15 @@ async def lifespan(app: FastAPI):
         yield
         return
 
-    # Start Huey worker subprocess
-    import subprocess
+    # Start Huey worker subprocess unless a dedicated worker service manages it.
+    huey_process = None
+    if _should_spawn_huey_worker():
+        import subprocess
 
-    huey_process = subprocess.Popen(
-        [_sys.executable, "-m", "agentpocket.workers.huey_worker"],
-    )
-    logger.info("Started Huey worker (PID %s)", huey_process.pid)
+        huey_process = subprocess.Popen(
+            [_sys.executable, "-m", "agentpocket.workers.huey_worker"],
+        )
+        logger.info("Started Huey worker (PID %s)", huey_process.pid)
 
     # Start the MCP session manager (streamable-HTTP transport at /mcp).
     from agentpocket.mcp import mcp
@@ -66,8 +74,9 @@ async def lifespan(app: FastAPI):
         try:
             yield
         finally:
-            huey_process.terminate()
-            huey_process.wait()
+            if huey_process is not None:
+                huey_process.terminate()
+                huey_process.wait()
 
 
 app = FastAPI(

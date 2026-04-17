@@ -1,17 +1,45 @@
 services:
-  # ─── Agent-SaveMark Server ──────────────────────────────────────────
+  prepare:
+    image: agent-savemark-local:full
+    user: "0:0"
+    command: ["python", "/app/scripts/start_full_postgres.py", "--prepare-only", "--skip-service-up", "--skip-embeddings"]
+    environment:
+      - FDP_DATABASE__URL=postgresql://agent:${POSTGRES_PASSWORD:-agent}@db:5432/Agent-SaveMark
+      - FDP_SEARCH__BACKEND=meilisearch
+      - FDP_SEARCH__MEILI_URL=http://meilisearch:7700
+      - FDP_SEARCH__MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-changeme-in-production}
+      - FDP_AI__CHAT_PROVIDER=${AI_CHAT_PROVIDER:-ollama}
+      - FDP_AI__OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
+      - FDP_STORAGE__BASE_PATH=/data
+      - FDP_SEARCH__VECTOR_BACKEND=chroma
+      - FDP_HUEY__BASE_PATH=/huey
+      - FDP_HUEY__DB_PATH=/huey/huey_tasks.db
+      - FDP_HUEY__JOURNAL_MODE=delete
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - ./data:/data
+      - agent-huey:/huey
+    depends_on:
+      db:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+    restart: "no"
+
   app:
-    image: ghcr.io/mad-agentic/Agent-SaveMark:${TAG:-latest}
-    build: .
+    container_name: agent-app
+    image: agent-savemark-local:full
+    user: "0:0"
     ports:
       - "${FDP_PORT:-4040}:4040"
     environment:
       - FDP_DATABASE__URL=postgresql://agent:${POSTGRES_PASSWORD:-agent}@db:5432/Agent-SaveMark
-      - FDP_SEARCH__BACKEND=${SEARCH_BACKEND:-sqlite}
+      - FDP_SEARCH__BACKEND=meilisearch
       - FDP_SEARCH__MEILI_URL=http://meilisearch:7700
       - FDP_SEARCH__MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-changeme-in-production}
       - FDP_AI__CHAT_PROVIDER=${AI_CHAT_PROVIDER:-ollama}
-      - FDP_AI__OLLAMA_URL=http://ollama:11434
+      - FDP_AI__OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
       - FDP_AI__GROQ_API_KEY=${GROQ_API_KEY:-}
       - FDP_AI__NVIDIA_API_KEY=${NVIDIA_API_KEY:-}
       - FDP_AI__CUSTOM_BASE_URL=${AI_CUSTOM_BASE_URL:-}
@@ -22,48 +50,71 @@ services:
       - FDP_STORAGE__BASE_PATH=/data
       - FDP_SERVER__SECURE_COOKIES=${SECURE_COOKIES:-false}
       - FDP_SERVER__CORS_ORIGINS=${CORS_ORIGINS:-["http://localhost:4040"]}
-      - FDP_SEARCH__VECTOR_BACKEND=${VECTOR_BACKEND:-pgvector}
+      - FDP_SEARCH__VECTOR_BACKEND=chroma
       - FDP_RERANK__ENABLED=${RERANK_ENABLED:-false}
       - FDP_ENRICHMENT__EXTRACT_ENTITIES=${EXTRACT_ENTITIES:-false}
+      - FDP_HUEY__SPAWN_WORKER=false
+      - FDP_HUEY__BASE_PATH=/huey
+      - FDP_HUEY__DB_PATH=/huey/huey_tasks.db
+      - FDP_HUEY__JOURNAL_MODE=delete
+    extra_hosts:
+      - host.docker.internal:host-gateway
     volumes:
-      - agent-data:/data
+      - ./data:/data
+      - agent-huey:/huey
     depends_on:
       db:
+        condition: service_healthy
+      meilisearch:
         condition: service_healthy
     restart: unless-stopped
 
   # ─── Background Worker ────────────────────────────────────────
   worker:
-    image: ghcr.io/mad-agentic/Agent-SaveMark:${TAG:-latest}
-    build: .
+    container_name: agent-worker
+    image: agent-savemark-local:full
+    user: "0:0"
     command: ["worker"]
+    healthcheck:
+      disable: true
     environment:
       - FDP_DATABASE__URL=postgresql://agent:${POSTGRES_PASSWORD:-agent}@db:5432/Agent-SaveMark
-      - FDP_SEARCH__BACKEND=${SEARCH_BACKEND:-sqlite}
+      - FDP_SEARCH__BACKEND=meilisearch
       - FDP_SEARCH__MEILI_URL=http://meilisearch:7700
       - FDP_SEARCH__MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-changeme-in-production}
       - FDP_AI__CHAT_PROVIDER=${AI_CHAT_PROVIDER:-ollama}
-      - FDP_AI__OLLAMA_URL=http://ollama:11434
+      - FDP_AI__OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
       - FDP_AI__GROQ_API_KEY=${GROQ_API_KEY:-}
       - FDP_AI__NVIDIA_API_KEY=${NVIDIA_API_KEY:-}
       - FDP_AI__CUSTOM_BASE_URL=${AI_CUSTOM_BASE_URL:-}
       - FDP_AI__CUSTOM_API_KEY=${AI_CUSTOM_API_KEY:-}
       - FDP_AI__CUSTOM_MODEL=${AI_CUSTOM_MODEL:-}
       - FDP_STORAGE__BASE_PATH=/data
+      - FDP_HUEY__BASE_PATH=/huey
+      - FDP_HUEY__DB_PATH=/huey/huey_tasks.db
+      - FDP_HUEY__JOURNAL_MODE=delete
       - HUEY_WORKERS=${HUEY_WORKERS:-2}
-      - FDP_SEARCH__VECTOR_BACKEND=${VECTOR_BACKEND:-pgvector}
+      - FDP_SEARCH__VECTOR_BACKEND=chroma
       - FDP_RERANK__ENABLED=${RERANK_ENABLED:-false}
       - FDP_ENRICHMENT__EXTRACT_ENTITIES=${EXTRACT_ENTITIES:-false}
+    extra_hosts:
+      - host.docker.internal:host-gateway
     volumes:
-      - agent-data:/data
+      - ./data:/data
+      - agent-huey:/huey
     depends_on:
       db:
         condition: service_healthy
+      meilisearch:
+        condition: service_healthy
     restart: unless-stopped
 
-  # ─── PostgreSQL (with pgvector extension) ────────────────────
+  # ─── PostgreSQL ──────────────────────────────────────────────
   db:
-    image: pgvector/pgvector:pg16
+    container_name: agent-postgres
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
     environment:
       - POSTGRES_USER=agent
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-agent}
@@ -77,10 +128,12 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # ─── Meilisearch (optional, enable with: SEARCH_BACKEND=meilisearch) ─
+  # ─── Meilisearch ─────────────────────────────────────────────
   meilisearch:
+    container_name: agent-meili
     image: getmeili/meilisearch:v1.12
-    profiles: ["search"]
+    ports:
+      - "7700:7700"
     environment:
       - MEILI_MASTER_KEY=${MEILI_MASTER_KEY:-changeme-in-production}
     volumes:
@@ -92,25 +145,25 @@ services:
       retries: 3
     restart: unless-stopped
 
-  # ─── ChromaDB (optional, enable with: docker compose --profile vectors up) ─
-  chromadb:
-    image: chromadb/chroma:latest
-    profiles: ["vectors"]
-    volumes:
-      - agent-chroma:/chroma/chroma
-    restart: unless-stopped
-
   # ─── Ollama (optional, enable with: docker compose --profile ai up) ─
   ollama:
+    container_name: agent-ollama
     image: ollama/ollama:latest
     profiles: ["ai"]
+    ports:
+      - "11434:11434"
     volumes:
       - agent-ollama:/root/.ollama
     restart: unless-stopped
 
 volumes:
-  agent-data:
   agent-postgres:
+    name: agent-postgres
+    external: true
   agent-meili:
-  agent-chroma:
+    name: agent-meili
+    external: true
   agent-ollama:
+    name: agent-ollama
+  agent-huey:
+    name: agent-huey

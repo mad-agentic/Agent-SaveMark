@@ -110,13 +110,23 @@ def chat_search(
         before=payload.before,
     )
 
-    search_results = service.search(
-        db,
-        question,
-        current_user.id,
-        filters=filters,
-        limit=payload.limit,
-    )
+    try:
+        search_results = service.search(
+            db,
+            question,
+            current_user.id,
+            filters=filters,
+            limit=payload.limit,
+        )
+    except Exception as exc:
+        logger.warning("Chat search failed for user %s: %s", current_user.id, exc)
+        return ChatSearchResponse(
+            answer=(
+                "I could not search your saved knowledge right now. "
+                "Please try again in a moment."
+            ),
+            sources=[],
+        )
 
     if not search_results:
         return ChatSearchResponse(

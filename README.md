@@ -152,6 +152,42 @@ cd frontend && pnpm install && pnpm dev   # → http://localhost:4041
 
 No login needed in single-user mode.
 
+### One Command: Migrate SQLite And Start Full PostgreSQL
+
+If you already have local data in `./data/Agent-SaveMark.db` and want to switch to the full stack from source:
+
+```bash
+# Windows
+start.bat full-postgres
+
+# Cross-platform alternative
+uv run python scripts/start_full_postgres_compose.py
+```
+
+What this does:
+
+- Starts Docker Compose with PostgreSQL, Meilisearch, app, and worker containers
+- Migrates SQLite data into PostgreSQL only when PostgreSQL is still empty
+- Rebuilds the Meilisearch index from PostgreSQL
+- Starts the app on `http://localhost:4040` from the `app` container
+
+Why there is no separate `chromadb` container in this flow:
+
+- This codebase uses Chroma via `PersistentClient(path=./data/chromadb)`, not via a standalone Chroma server
+- Running a dedicated `chromadb` container was redundant for the current implementation
+- The app and worker containers now share the same `./data` mount, so semantic search data stays in one place
+
+Note:
+
+- The Docker Compose image is intentionally trimmed to PostgreSQL + Meilisearch dependencies so it can build reliably on this machine.
+- If you want to recompute Chroma embeddings, run that step from the host environment with `uv run python scripts/backfill_chroma_embeddings.py`.
+
+If you only need to backfill semantic embeddings after a migration:
+
+```bash
+uv run python scripts/backfill_chroma_embeddings.py
+```
+
 ### Hybrid (Source + Docker Services)
 
 Run the app from source while using Docker for PostgreSQL, Meilisearch, or Ollama:

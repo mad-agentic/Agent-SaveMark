@@ -2,6 +2,7 @@
 import io
 import json
 from datetime import datetime, timezone
+from html.parser import HTMLParser
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
@@ -17,6 +18,49 @@ router = APIRouter(tags=["import-export"])
 
 
 MAX_IMPORT_SIZE = 10 * 1024 * 1024  # 10MB
+
+
+class _BookmarkAnchorParser(HTMLParser):
+    """Best-effort parser for bookmark HTML anchor tags."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.anchors: list[tuple[str, str]] = []
+        self._current_href: str | None = None
+        self._current_text_parts: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]):
+        if tag.lower() != "a":
+            return
+        href = None
+        for key, value in attrs:
+            if key and key.lower() == "href":
+                href = value
+                break
+        self._current_href = href
+        self._current_text_parts = []
+
+    def handle_data(self, data: str):
+        if self._current_href is None:
+            return
+        self._current_text_parts.append(data)
+
+    def handle_endtag(self, tag: str):
+        if tag.lower() != "a" or self._current_href is None:
+            return
+        title = "".join(self._current_text_parts).strip()
+        self.anchors.append((self._current_href, title))
+        self._current_href = None
+        self._current_text_parts = []
+
+    def close(self):
+        # Flush a trailing <a ...> without closing tag in malformed HTML.
+        if self._current_href is not None:
+            title = "".join(self._current_text_parts).strip()
+            self.anchors.append((self._current_href, title))
+            self._current_href = None
+            self._current_text_parts = []
+        super().close()
 
 
 def _safe_href(url: str | None) -> str | None:
@@ -57,18 +101,40 @@ def import_bookmarks(
 
 def _import_chrome_html(html: str, user_id, db: Session) -> int:
     """Parse Chrome bookmarks HTML and create items."""
-    import re
+    parser = _BookmarkAnchorParser()
+    parser.feed(html)
+    parser.close()
+
+    existing_urls = {
+        url
+        for url in db.exec(
+            select(KnowledgeItem.url).where(
+                KnowledgeItem.user_id == user_id,
+                KnowledgeItem.url.is_not(None),
+            )
+        ).all()
+        if url
+    }
+
+    seen_urls: set[str] = set()
     count = 0
-    for match in re.finditer(r'<A HREF="([^"]+)"[^>]*>([^<]+)</A>', html, re.IGNORECASE):
-        url, title = match.group(1), match.group(2).strip()
-        if not url.startswith("http"):
+    for raw_url, raw_title in parser.anchors:
+        url = (raw_url or "").strip()
+        if not url.startswith(("http://", "https://")):
             continue
+
+        if url in existing_urls or url in seen_urls:
+            continue
+
+        title = raw_title.strip() or url
         item = KnowledgeItem(
             user_id=user_id, url=url, title=title,
             item_type=ItemType.url, source_platform=SourcePlatform.generic,
         )
         db.add(item)
+        seen_urls.add(url)
         count += 1
+
     db.commit()
     return count
 

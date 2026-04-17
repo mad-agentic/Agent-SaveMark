@@ -28,17 +28,33 @@ interface AIConfig {
   chat_provider: string;
   ollama_url: string;
   ollama_model: string;
+  ollama_tagged_model: string;
+  ollama_summarized_model: string;
   groq_api_key: string;
+  groq_tagged_model: string;
+  groq_summarized_model: string;
   nvidia_api_key: string;
+  nvidia_tagged_model: string;
+  nvidia_summarized_model: string;
   custom_base_url: string;
   custom_api_key: string;
   custom_model: string;
+  custom_tagged_model: string;
+  custom_summarized_model: string;
   custom_api_type: string;
   embedding_provider: string;
   auto_tag: boolean;
   auto_summarize: boolean;
   tag_confidence_threshold: number;
   sync_enrichment: boolean;
+}
+
+interface ChatConfigResponse {
+  provider: string;
+  active_model: string;
+  available_models: string[];
+  model_fetch_status: "connected" | "failed";
+  model_fetch_message: string | null;
 }
 
 export default function Admin() {
@@ -327,6 +343,9 @@ function AIConfigSection({ config, onUpdate }: { config?: AIConfig; onUpdate: (d
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [localConfig, setLocalConfig] = useState<AIConfig | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [chatModelMeta, setChatModelMeta] = useState<ChatConfigResponse | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   // Sync local config from server config on load
   const prevConfig = useRef(config);
@@ -357,6 +376,80 @@ function AIConfigSection({ config, onUpdate }: { config?: AIConfig; onUpdate: (d
   const handleDiscard = () => {
     setLocalConfig({ ...config });
     setHasChanges(false);
+    setChatModelMeta(null);
+    setConnectionError(null);
+  };
+
+  const getModelOptions = (currentValue: string): string[] => {
+    const models = chatModelMeta?.available_models ?? [];
+    if (currentValue && !models.includes(currentValue)) {
+      return [currentValue, ...models];
+    }
+    return models;
+  };
+
+  const connectAndFetchModels = async () => {
+    setIsConnecting(true);
+    setConnectionError(null);
+
+    try {
+      const metadata = await api.post<ChatConfigResponse>("/api/v1/admin/ai-models", {
+        chat_provider: effective.chat_provider,
+        ollama_url: effective.ollama_url,
+        ollama_model: effective.ollama_model,
+        groq_api_key: effective.groq_api_key,
+        nvidia_api_key: effective.nvidia_api_key,
+        custom_base_url: effective.custom_base_url,
+        custom_api_key: effective.custom_api_key,
+        custom_model: effective.custom_model,
+        custom_api_type: effective.custom_api_type,
+      });
+
+      setChatModelMeta(metadata);
+      if (metadata.model_fetch_status === "failed") {
+        setConnectionError(metadata.model_fetch_message || "Failed to fetch models from provider");
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not connect to provider";
+      setConnectionError(message);
+      setChatModelMeta(null);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const renderModelField = (
+    label: string,
+    value: string,
+    onChange: (value: string) => void,
+    placeholder: string,
+  ) => {
+    const options = getModelOptions(value);
+
+    return (
+      <div>
+        <label className="text-xs font-medium text-gray-600 dark:text-gray-400">{label}</label>
+        {options.length > 0 ? (
+          <select
+            value={value || options[0] || ""}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full mt-1 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-1.5 cursor-pointer"
+          >
+            {options.map((model) => (
+              <option key={model} value={model}>{model}</option>
+            ))}
+          </select>
+        ) : (
+          <input
+            type="text"
+            value={value || ""}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className="w-full mt-1 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-1.5"
+          />
+        )}
+      </div>
+    );
   };
 
   return (
@@ -378,16 +471,45 @@ function AIConfigSection({ config, onUpdate }: { config?: AIConfig; onUpdate: (d
             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Chat Provider</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">AI model provider for tagging and summarization</p>
           </div>
-          <select
-            value={effective.chat_provider}
-            onChange={(e) => updateLocal({ chat_provider: e.target.value })}
-            className="text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-1.5 cursor-pointer"
-          >
-            {PROVIDERS.map((p) => (
-              <option key={p.value} value={p.value}>{p.label}</option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              value={effective.chat_provider}
+              onChange={(e) => {
+                updateLocal({ chat_provider: e.target.value });
+                setChatModelMeta(null);
+                setConnectionError(null);
+              }}
+              className="text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-1.5 cursor-pointer"
+            >
+              {PROVIDERS.map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => void connectAndFetchModels()}
+              disabled={isConnecting}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600 text-white text-xs font-medium hover:bg-sky-700 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isConnecting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+              {isConnecting ? "Connecting..." : "Connect"}
+            </button>
+            {chatModelMeta && (
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${
+                  chatModelMeta.model_fetch_status === "connected"
+                    ? "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900"
+                    : "bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-900"
+                }`}
+                title={chatModelMeta.model_fetch_message ?? undefined}
+              >
+                {chatModelMeta.model_fetch_status === "connected" ? "Connected" : "Failed"}
+              </span>
+            )}
+          </div>
         </div>
+        {connectionError && (
+          <p className="text-xs text-rose-600 dark:text-rose-300">{connectionError}</p>
+        )}
 
         {/* Ollama Settings */}
         {effective.chat_provider === "ollama" && (
@@ -402,51 +524,102 @@ function AIConfigSection({ config, onUpdate }: { config?: AIConfig; onUpdate: (d
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Model</label>
-              <input
-                type="text"
-                value={effective.ollama_model || ""}
-                onChange={(e) => updateLocal({ ollama_model: e.target.value })}
-                className="w-full mt-1 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-1.5"
-              />
+              {renderModelField(
+                "Model",
+                effective.ollama_model || "",
+                (value) => updateLocal({ ollama_model: value }),
+                "llama3.1:8b",
+              )}
+            </div>
+            <div>
+              {renderModelField(
+                "Tagged Model",
+                effective.ollama_tagged_model || "",
+                (value) => updateLocal({ ollama_tagged_model: value }),
+                "Model for tagging",
+              )}
+            </div>
+            <div>
+              {renderModelField(
+                "Summarized Model",
+                effective.ollama_summarized_model || "",
+                (value) => updateLocal({ ollama_summarized_model: value }),
+                "Model for summarization",
+              )}
             </div>
           </div>
         )}
 
         {/* Groq Settings */}
         {effective.chat_provider === "groq" && (
-          <div className="pl-4 border-l-2 border-sky-200 dark:border-sky-800">
-            <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Groq API Key</label>
-            <div className="relative mt-1">
-              <input
-                type={showKeys.groq ? "text" : "password"}
-                value={effective.groq_api_key || ""}
-                onChange={(e) => updateLocal({ groq_api_key: e.target.value })}
-                placeholder="gsk_..."
-                className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-1.5 pr-10"
-              />
-              <button onClick={() => toggleKey("groq")} className="absolute right-2 top-1.5 text-gray-400 cursor-pointer">
-                {showKeys.groq ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+          <div className="space-y-3 pl-4 border-l-2 border-sky-200 dark:border-sky-800">
+            <div>
+              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Groq API Key</label>
+              <div className="relative mt-1">
+                <input
+                  type={showKeys.groq ? "text" : "password"}
+                  value={effective.groq_api_key || ""}
+                  onChange={(e) => updateLocal({ groq_api_key: e.target.value })}
+                  placeholder="gsk_..."
+                  className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-1.5 pr-10"
+                />
+                <button onClick={() => toggleKey("groq")} className="absolute right-2 top-1.5 text-gray-400 cursor-pointer">
+                  {showKeys.groq ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div>
+              {renderModelField(
+                "Tagged Model",
+                effective.groq_tagged_model || "",
+                (value) => updateLocal({ groq_tagged_model: value }),
+                "Model for tagging",
+              )}
+            </div>
+            <div>
+              {renderModelField(
+                "Summarized Model",
+                effective.groq_summarized_model || "",
+                (value) => updateLocal({ groq_summarized_model: value }),
+                "Model for summarization",
+              )}
             </div>
           </div>
         )}
 
         {/* NVIDIA Settings */}
         {effective.chat_provider === "nvidia" && (
-          <div className="pl-4 border-l-2 border-sky-200 dark:border-sky-800">
-            <label className="text-xs font-medium text-gray-600 dark:text-gray-400">NVIDIA API Key</label>
-            <div className="relative mt-1">
-              <input
-                type={showKeys.nvidia ? "text" : "password"}
-                value={effective.nvidia_api_key || ""}
-                onChange={(e) => updateLocal({ nvidia_api_key: e.target.value })}
-                placeholder="nvapi-..."
-                className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-1.5 pr-10"
-              />
-              <button onClick={() => toggleKey("nvidia")} className="absolute right-2 top-1.5 text-gray-400 cursor-pointer">
-                {showKeys.nvidia ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+          <div className="space-y-3 pl-4 border-l-2 border-sky-200 dark:border-sky-800">
+            <div>
+              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">NVIDIA API Key</label>
+              <div className="relative mt-1">
+                <input
+                  type={showKeys.nvidia ? "text" : "password"}
+                  value={effective.nvidia_api_key || ""}
+                  onChange={(e) => updateLocal({ nvidia_api_key: e.target.value })}
+                  placeholder="nvapi-..."
+                  className="w-full text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-1.5 pr-10"
+                />
+                <button onClick={() => toggleKey("nvidia")} className="absolute right-2 top-1.5 text-gray-400 cursor-pointer">
+                  {showKeys.nvidia ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div>
+              {renderModelField(
+                "Tagged Model",
+                effective.nvidia_tagged_model || "",
+                (value) => updateLocal({ nvidia_tagged_model: value }),
+                "Model for tagging",
+              )}
+            </div>
+            <div>
+              {renderModelField(
+                "Summarized Model",
+                effective.nvidia_summarized_model || "",
+                (value) => updateLocal({ nvidia_summarized_model: value }),
+                "Model for summarization",
+              )}
             </div>
           </div>
         )}
@@ -492,14 +665,28 @@ function AIConfigSection({ config, onUpdate }: { config?: AIConfig; onUpdate: (d
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Model Name</label>
-              <input
-                type="text"
-                value={effective.custom_model || ""}
-                onChange={(e) => updateLocal({ custom_model: e.target.value })}
-                placeholder="MiniMax-M2.7"
-                className="w-full mt-1 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-1.5"
-              />
+              {renderModelField(
+                "Model Name",
+                effective.custom_model || "",
+                (value) => updateLocal({ custom_model: value }),
+                "gpt-4o-mini",
+              )}
+            </div>
+            <div>
+              {renderModelField(
+                "Tagged Model",
+                effective.custom_tagged_model || "",
+                (value) => updateLocal({ custom_tagged_model: value }),
+                "Model for tagging",
+              )}
+            </div>
+            <div>
+              {renderModelField(
+                "Summarized Model",
+                effective.custom_summarized_model || "",
+                (value) => updateLocal({ custom_summarized_model: value }),
+                "Model for summarization",
+              )}
             </div>
           </div>
         )}

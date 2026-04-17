@@ -127,9 +127,13 @@ class SearchService:
         fetch_size = base_fetch * 3 if filters.allowed_item_ids is not None else base_fetch
 
         # 1. Keyword search
-        keyword_hits = self._keyword.search(
-            db, query, user_id, filters, limit=fetch_size, offset=0,
-        )
+        try:
+            keyword_hits = self._keyword.search(
+                db, query, user_id, filters, limit=fetch_size, offset=0,
+            )
+        except Exception as e:
+            logger.warning("Keyword search unavailable, continuing without keyword hits: %s", e)
+            keyword_hits = []
 
         # 2. Vector search (embed query, then search)
         vector_hits = []

@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(gh run:*)",
+      "Bash(sed -i 's/\"version\": \"0.2.1\"/\"version\": \"0.2.2\"/g' frontend/package.json extension/package.json mcp-npm/package.json)",
+      "Bash(sed -i 's/^version = \"0.2.1\"/version = \"0.2.2\"/' pyproject.toml)",
+      "Bash(uv lock:*)",
+      "Bash(winget install:*)"
     ]
   }
 }

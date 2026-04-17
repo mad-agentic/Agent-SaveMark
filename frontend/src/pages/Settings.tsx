@@ -15,10 +15,12 @@ import {
   Lock,
   AlertTriangle,
   Trash2,
+  Upload,
+  FileUp,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/api/client";
+import { api, apiFetch } from "@/api/client";
 import { useUIStore } from "@/stores/ui-store";
 import {
   useCurrentUser,
@@ -32,6 +34,7 @@ import { McpSetupPanel } from "@/components/settings/McpSetupPanel";
 
 type Theme = "light" | "dark" | "system";
 type ViewMode = "grid" | "list";
+type ImportSource = "chrome" | "pocket" | "json";
 
 interface ApiSettings {
   ai_provider: string;
@@ -57,6 +60,32 @@ const VIEW_MODES: { value: ViewMode; label: string; icon: React.ReactNode }[] = 
 
 const SHARE_MODES = ["private", "public"];
 
+const IMPORT_SOURCES: Array<{
+  value: ImportSource;
+  label: string;
+  description: string;
+  accept: string;
+}> = [
+  {
+    value: "chrome",
+    label: "Chrome Bookmarks",
+    description: "Import file HTML exported từ Chrome Bookmark Manager.",
+    accept: ".html,text/html",
+  },
+  {
+    value: "pocket",
+    label: "Pocket Export",
+    description: "Import file HTML export từ Pocket.",
+    accept: ".html,text/html",
+  },
+  {
+    value: "json",
+    label: "JSON Export",
+    description: "Import file JSON theo định dạng export của Agent-SaveMark hoặc danh sách item tương thích.",
+    accept: ".json,application/json",
+  },
+];
+
 export default function Settings() {
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -76,11 +105,16 @@ export default function Settings() {
   const [passwordError, setPasswordError] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [showDeleteForm, setShowDeleteForm] = useState(false);
+  const [importSource, setImportSource] = useState<ImportSource>("chrome");
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
   const mcpUrl = typeof window !== "undefined" && window.location.port === "4041"
     ? `${window.location.protocol}//${window.location.hostname}:4040/mcp`
     : typeof window !== "undefined"
       ? `${window.location.origin}/mcp`
       : "http://localhost:4040/mcp";
+  const selectedImportSource = IMPORT_SOURCES.find((source) => source.value === importSource) ?? IMPORT_SOURCES[0];
 
   useEffect(() => {
     if (currentUser) {
@@ -137,6 +171,43 @@ export default function Settings() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["settings"] }),
   });
 
+  const importData = useMutation({
+    mutationFn: async ({ source, file }: { source: ImportSource; file: File }) => {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await apiFetch(`/api/v1/import/${source}`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        let detail = `${response.status}: ${response.statusText}`;
+        try {
+          const error = await response.json();
+          if (typeof error?.detail === "string" && error.detail.trim()) {
+            detail = error.detail;
+          }
+        } catch {}
+        throw new Error(detail);
+      }
+
+      return response.json() as Promise<{ imported: number; source: string }>;
+    },
+    onSuccess: (data) => {
+      setImportError(null);
+      setImportMessage(`Imported ${data.imported} item${data.imported === 1 ? "" : "s"} into your account.`);
+      setImportFile(null);
+      qc.invalidateQueries({ queryKey: ["items"] });
+      qc.invalidateQueries({ queryKey: ["notes"] });
+      navigate("/knowledge");
+    },
+    onError: (error) => {
+      setImportMessage(null);
+      setImportError(error instanceof Error ? error.message : "Import failed");
+    },
+  });
+
   function handleThemeChange(value: Theme) {
     setTheme(value);
     updateSettings.mutate({ theme: value });
@@ -145,6 +216,18 @@ export default function Settings() {
   function handleViewModeChange(value: ViewMode) {
     setViewMode(value);
     updateSettings.mutate({ view_mode: value });
+  }
+
+  function handleImportSubmit() {
+    if (!importFile) {
+      setImportMessage(null);
+      setImportError("Choose an export file before importing.");
+      return;
+    }
+
+    setImportMessage(null);
+    setImportError(null);
+    importData.mutate({ source: importSource, file: importFile });
   }
 
   return (
@@ -481,6 +564,100 @@ export default function Settings() {
                 </option>
               ))}
             </select>
+          </div>
+        </div>
+
+        {/* Import Data */}
+        <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Upload className="h-4 w-4 text-sky-600" />
+            <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">
+              Import Data
+            </h2>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
+                Import Source
+              </label>
+              <select
+                value={importSource}
+                onChange={(event) => {
+                  setImportSource(event.target.value as ImportSource);
+                  setImportFile(null);
+                  setImportMessage(null);
+                  setImportError(null);
+                }}
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-sky-500 focus:outline-none"
+              >
+                {IMPORT_SOURCES.map((source) => (
+                  <option key={source.value} value={source.value}>
+                    {source.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+                {selectedImportSource.description}
+              </p>
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
+                Export File
+              </label>
+              <label className="flex items-center justify-between gap-3 px-3 py-3 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/70 cursor-pointer hover:border-sky-400 dark:hover:border-sky-600 transition-colors">
+                <div className="flex items-center gap-3 min-w-0">
+                  <FileUp className="h-4 w-4 text-sky-600 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm text-gray-900 dark:text-gray-100 truncate">
+                      {importFile ? importFile.name : "Choose export file"}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Max 10MB. File will be imported into the currently signed-in account.
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-medium text-sky-600 dark:text-sky-400 shrink-0">
+                  Browse
+                </span>
+                <input
+                  type="file"
+                  accept={selectedImportSource.accept}
+                  onChange={(event) => {
+                    setImportFile(event.target.files?.[0] ?? null);
+                    setImportMessage(null);
+                    setImportError(null);
+                  }}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleImportSubmit}
+                disabled={!importFile || importData.isPending}
+                className="px-4 py-2 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 disabled:opacity-50 transition-colors cursor-pointer"
+              >
+                {importData.isPending ? "Importing..." : "Import into account"}
+              </button>
+              {importFile && (
+                <button
+                  onClick={() => {
+                    setImportFile(null);
+                    setImportMessage(null);
+                    setImportError(null);
+                  }}
+                  className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                >
+                  Clear file
+                </button>
+              )}
+            </div>
+
+            {importMessage && <p className="text-xs text-green-600 dark:text-green-400">{importMessage}</p>}
+            {importError && <p className="text-xs text-red-500">{importError}</p>}
           </div>
         </div>
 

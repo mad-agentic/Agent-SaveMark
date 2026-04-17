@@ -13,20 +13,27 @@ logger = logging.getLogger(__name__)
 class MeilisearchKeywordBackend:
     def __init__(self):
         self._initialized = False
+        self._available = True
 
     def _ensure_init(self) -> None:
-        if self._initialized:
+        if self._initialized or not self._available:
             return
         from agentpocket.search.meilisearch_backend import init_meilisearch
-
-        init_meilisearch()
-        self._initialized = True
+        try:
+            init_meilisearch()
+            self._initialized = True
+            self._available = True
+        except Exception as e:
+            self._available = False
+            logger.warning("Meilisearch unavailable; keyword backend disabled: %s", e)
 
     def init(self, db: Session) -> None:
         self._ensure_init()
 
     def index_item(self, db: Session, item: object) -> None:
         self._ensure_init()
+        if not self._available:
+            return
         from agentpocket.search.meilisearch_backend import index_item
 
         index_item(item)  # type: ignore[arg-type]
@@ -42,6 +49,8 @@ class MeilisearchKeywordBackend:
     ) -> None:
         """Index chunks as separate Meilisearch documents for chunk-level retrieval."""
         try:
+            if not self._available:
+                return
             from agentpocket.search.meilisearch_backend import _get_client
 
             client = _get_client()
@@ -68,6 +77,8 @@ class MeilisearchKeywordBackend:
             logger.debug("Meilisearch chunk indexing failed: %s", e)
 
     def delete_item(self, db: Session, item_id: uuid.UUID) -> None:
+        if not self._available:
+            return
         from agentpocket.search.meilisearch_backend import delete_item
 
         delete_item(item_id)
@@ -92,6 +103,8 @@ class MeilisearchKeywordBackend:
         offset: int,
     ) -> list[KeywordHit]:
         self._ensure_init()
+        if not self._available:
+            return []
         from agentpocket.search.meilisearch_backend import _get_client
 
         client = _get_client()

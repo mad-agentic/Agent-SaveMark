@@ -39,11 +39,19 @@ def get_resolved_ai_config() -> dict:
         "chat_provider": settings.ai.chat_provider,
         "ollama_url": settings.ai.ollama_url,
         "ollama_model": settings.ai.ollama_model,
+        "ollama_tagged_model": settings.ai.ollama_tagged_model,
+        "ollama_summarized_model": settings.ai.ollama_summarized_model,
         "groq_api_key": settings.ai.groq_api_key,
+        "groq_tagged_model": settings.ai.groq_tagged_model,
+        "groq_summarized_model": settings.ai.groq_summarized_model,
         "nvidia_api_key": settings.ai.nvidia_api_key,
+        "nvidia_tagged_model": settings.ai.nvidia_tagged_model,
+        "nvidia_summarized_model": settings.ai.nvidia_summarized_model,
         "custom_base_url": settings.ai.custom_base_url,
         "custom_api_key": settings.ai.custom_api_key,
         "custom_model": settings.ai.custom_model,
+        "custom_tagged_model": settings.ai.custom_tagged_model,
+        "custom_summarized_model": settings.ai.custom_summarized_model,
         "custom_api_type": settings.ai.custom_api_type,
         "embedding_provider": settings.ai.embedding_provider,
         "embedding_model": settings.ai.embedding_model,
@@ -61,12 +69,14 @@ def get_resolved_ai_config() -> dict:
     return base
 
 
-def get_chat_provider(overrides: dict | None = None):
+def get_chat_provider(overrides: dict | None = None, task: str | None = None):
     """Return the configured chat provider.
 
     Args:
         overrides: Optional dict to override settings (used when admin config is pre-loaded).
                    If None, reads from env + DB automatically.
+        task: Optional task hint for selecting task-specific model defaults
+              (e.g. "tagged", "summarized") from provider config.
     """
     if overrides is None:
         overrides = get_ai_overrides_from_db()
@@ -77,7 +87,7 @@ def get_chat_provider(overrides: dict | None = None):
     if provider_name in ("ollama", "groq", "nvidia", "custom"):
         try:
             from agentpocket.ai.openai_compatible import OpenAICompatibleProvider
-            return OpenAICompatibleProvider(provider_name, overrides=overrides)
+            return OpenAICompatibleProvider(provider_name, overrides=overrides, task=task)
         except Exception as e:
             logger.warning("Failed to create %s provider: %s", provider_name, e)
             return NoOpChatProvider()

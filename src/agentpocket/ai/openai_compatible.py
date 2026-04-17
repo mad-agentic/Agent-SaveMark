@@ -14,18 +14,31 @@ PROVIDER_CONFIGS = {
         "base_url": "http://localhost:11434/v1",
         "api_key": "ollama",
         "default_model": "llama3.2",
+        "task_models": {
+            "tagged": "llama3.2",
+            "summarized": "llama3.2",
+        },
     },
     "groq": {
         "base_url": "https://api.groq.com/openai/v1",
         "default_model": "llama-3.3-70b-versatile",
+        "task_models": {
+            "tagged": "llama-3.3-70b-versatile",
+            "summarized": "llama-3.3-70b-versatile",
+        },
     },
     "nvidia": {
         "base_url": "https://integrate.api.nvidia.com/v1",
         "default_model": "qwen/qwen3.5-397b-a17b",
+        "task_models": {
+            "tagged": "qwen/qwen3.5-397b-a17b",
+            "summarized": "qwen/qwen3.5-397b-a17b",
+        },
     },
     "custom": {
         "base_url": "",
         "default_model": "",
+        "task_models": {},
     },
 }
 
@@ -36,12 +49,49 @@ class OpenAICompatibleProvider:
     Supports both OpenAI-compatible and Anthropic-compatible API formats.
     """
 
-    def __init__(self, provider: str | None = None, overrides: dict | None = None):
+    def __init__(
+        self,
+        provider: str | None = None,
+        overrides: dict | None = None,
+        task: str | None = None,
+    ):
         settings = get_settings()
         ov = overrides or {}
         provider = ov.get("chat_provider") or provider or settings.ai.chat_provider
         config = PROVIDER_CONFIGS.get(provider, PROVIDER_CONFIGS["ollama"])
         override_model = ov.get("chat_model") or ov.get("model")
+        task_model = config.get("task_models", {}).get(task or "")
+
+        if provider == "ollama":
+            if task == "tagged":
+                task_override_model = ov.get("ollama_tagged_model") or settings.ai.ollama_tagged_model
+            elif task == "summarized":
+                task_override_model = ov.get("ollama_summarized_model") or settings.ai.ollama_summarized_model
+            else:
+                task_override_model = None
+        elif provider == "groq":
+            if task == "tagged":
+                task_override_model = ov.get("groq_tagged_model") or settings.ai.groq_tagged_model
+            elif task == "summarized":
+                task_override_model = ov.get("groq_summarized_model") or settings.ai.groq_summarized_model
+            else:
+                task_override_model = None
+        elif provider == "nvidia":
+            if task == "tagged":
+                task_override_model = ov.get("nvidia_tagged_model") or settings.ai.nvidia_tagged_model
+            elif task == "summarized":
+                task_override_model = ov.get("nvidia_summarized_model") or settings.ai.nvidia_summarized_model
+            else:
+                task_override_model = None
+        elif provider == "custom":
+            if task == "tagged":
+                task_override_model = ov.get("custom_tagged_model") or settings.ai.custom_tagged_model
+            elif task == "summarized":
+                task_override_model = ov.get("custom_summarized_model") or settings.ai.custom_summarized_model
+            else:
+                task_override_model = None
+        else:
+            task_override_model = None
 
         self._api_type = "openai"  # default for all built-in providers
         base_url = config["base_url"]
@@ -49,23 +99,29 @@ class OpenAICompatibleProvider:
         if provider == "ollama":
             base_url = f"{(ov.get('ollama_url') or settings.ai.ollama_url).rstrip('/')}/v1"
             api_key = "ollama"
-            self._model = override_model or ov.get("ollama_model") or settings.ai.ollama_model
+            self._model = (
+                override_model
+                or task_override_model
+                or task_model
+                or ov.get("ollama_model")
+                or settings.ai.ollama_model
+            )
         elif provider == "groq":
             api_key = ov.get("groq_api_key") or settings.ai.groq_api_key
-            self._model = override_model or config["default_model"]
+            self._model = override_model or task_override_model or task_model or config["default_model"]
         elif provider == "nvidia":
             api_key = ov.get("nvidia_api_key") or settings.ai.nvidia_api_key
-            self._model = override_model or config["default_model"]
+            self._model = override_model or task_override_model or task_model or config["default_model"]
         elif provider == "custom":
             base_url = ov.get("custom_base_url") or settings.ai.custom_base_url
             api_key = ov.get("custom_api_key") or settings.ai.custom_api_key
-            self._model = override_model or ov.get("custom_model") or settings.ai.custom_model
+            self._model = override_model or task_override_model or task_model or ov.get("custom_model") or settings.ai.custom_model
             self._api_type = ov.get("custom_api_type") or settings.ai.custom_api_type
             if not base_url or not api_key:
                 raise ValueError("Custom provider requires base_url and api_key")
         else:
             api_key = "none"
-            self._model = override_model or config.get("default_model", "llama3.2")
+            self._model = override_model or task_override_model or task_model or config.get("default_model", "llama3.2")
 
         self._provider = provider
 

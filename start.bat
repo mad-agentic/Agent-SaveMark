@@ -16,6 +16,7 @@ echo.
 
 if /I "%~1"=="--help" goto :help
 if /I "%~1"=="/help" goto :help
+if /I "%~1"=="full-postgres" goto :full_postgres
 
 set "AUTH_MODE=auto"
 if /I "%~1"=="single" set "AUTH_MODE=single"
@@ -95,7 +96,18 @@ echo Tips:
 echo   - Auth mode from .env: start.bat
 echo   - Force single mode:  start.bat single
 echo   - Force multi mode:   start.bat multi
+echo   - Full Postgres flow: start.bat full-postgres
 goto :eof
+
+:full_postgres
+echo [INFO] Running full PostgreSQL Docker Compose flow...
+call :checkCommand uv "Install uv first: https://docs.astral.sh/uv/getting-started/installation/"
+if errorlevel 1 exit /b 1
+call :checkCommand docker "Install Docker Desktop first: https://www.docker.com/products/docker-desktop/"
+if errorlevel 1 exit /b 1
+cd /d "%ROOT%"
+call uv run python scripts\start_full_postgres_compose.py
+exit /b %errorlevel%
 
 :checkCommand
 where %~1 >nul 2>nul
@@ -116,4 +128,5 @@ echo Usage:
 echo   start.bat          ^(auth mode from .env^)
 echo   start.bat single   ^(force single-user mode^)
 echo   start.bat multi    ^(force multi-user mode^)
+echo   start.bat full-postgres ^(migrate SQLite, backfill indexes, start full Postgres stack^)
 exit /b 0

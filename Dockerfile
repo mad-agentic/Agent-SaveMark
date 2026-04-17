@@ -15,8 +15,10 @@ FROM python:3.12-slim AS builder
 WORKDIR /app
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-ARG UV_SYNC_FLAGS="--no-dev --all-extras --frozen"
-ARG UV_SYNC_FALLBACK_FLAGS="--no-dev --all-extras"
+# Local compose image only needs PostgreSQL and Meilisearch.
+# Skip processor and semantic extras to keep Docker builds manageable on Windows.
+ARG UV_SYNC_FLAGS="--no-dev --frozen --extra postgres --extra meilisearch"
+ARG UV_SYNC_FALLBACK_FLAGS="--no-dev --extra postgres --extra meilisearch"
 
 COPY pyproject.toml uv.lock* hatch_build.py ./
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -44,10 +46,11 @@ COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/src /app/src
 COPY --from=builder /app/pyproject.toml /app/pyproject.toml
 COPY --from=frontend /app/frontend/dist /app/frontend/dist
+COPY scripts/ /app/scripts/
 
 # Copy entrypoint
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
-RUN chmod +x /app/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /app/docker-entrypoint.sh && chmod +x /app/docker-entrypoint.sh
 
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH="/app/src" \

@@ -62,7 +62,7 @@ def generate_tags(
     if not text_parts:
         return []
 
-    chat = get_chat_provider()
+    chat = get_chat_provider(task="tagged")
     analysis_text = "\n".join(text_parts)
     prompt = (
         f"{TAGGING_FEW_SHOT}\n\n"

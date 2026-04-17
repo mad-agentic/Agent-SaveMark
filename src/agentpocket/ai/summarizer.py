@@ -33,7 +33,7 @@ def generate_summary(
     if not text_parts:
         return None
 
-    chat = get_chat_provider()
+    chat = get_chat_provider(task="summarized")
     sanitized_text = "\n".join(text_parts)
     prompt = (
         "Summarize the following user-provided content in 2-3 sentences."

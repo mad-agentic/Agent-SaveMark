@@ -262,8 +262,12 @@ def delete_user(
 
 AI_CONFIG_KEYS = {
     "chat_provider", "ollama_url", "ollama_model",
+    "ollama_tagged_model", "ollama_summarized_model",
     "groq_api_key", "nvidia_api_key",
+    "groq_tagged_model", "groq_summarized_model",
+    "nvidia_tagged_model", "nvidia_summarized_model",
     "custom_base_url", "custom_api_key", "custom_model", "custom_api_type",
+    "custom_tagged_model", "custom_summarized_model",
     "embedding_provider", "embedding_model",
     "auto_tag", "auto_summarize",
     "tag_confidence_threshold", "tag_suggestion_threshold",
@@ -299,11 +303,19 @@ class AISettingsUpdate(BaseModel):
     chat_provider: str | None = None
     ollama_url: str | None = None
     ollama_model: str | None = None
+    ollama_tagged_model: str | None = None
+    ollama_summarized_model: str | None = None
     groq_api_key: str | None = None
+    groq_tagged_model: str | None = None
+    groq_summarized_model: str | None = None
     nvidia_api_key: str | None = None
+    nvidia_tagged_model: str | None = None
+    nvidia_summarized_model: str | None = None
     custom_base_url: str | None = None
     custom_api_key: str | None = None
     custom_model: str | None = None
+    custom_tagged_model: str | None = None
+    custom_summarized_model: str | None = None
     custom_api_type: str | None = None
     embedding_provider: str | None = None
     embedding_model: str | None = None
@@ -312,6 +324,44 @@ class AISettingsUpdate(BaseModel):
     tag_confidence_threshold: float | None = None
     tag_suggestion_threshold: float | None = None
     sync_enrichment: bool | None = None
+
+
+class ChatConfigResponse(BaseModel):
+    provider: str
+    active_model: str
+    available_models: list[str]
+    model_fetch_status: str
+    model_fetch_message: str | None = None
+
+
+class AIModelProbeRequest(BaseModel):
+    chat_provider: str | None = None
+    ollama_url: str | None = None
+    ollama_model: str | None = None
+    groq_api_key: str | None = None
+    nvidia_api_key: str | None = None
+    custom_base_url: str | None = None
+    custom_api_key: str | None = None
+    custom_model: str | None = None
+    custom_api_type: str | None = None
+
+
+@router.post("/ai-models", response_model=ChatConfigResponse)
+def probe_ai_models(
+    data: AIModelProbeRequest,
+    _admin: User = Depends(require_admin),
+):
+    """Test provider connectivity and return selectable model list for admin UI."""
+    from agentpocket.ai.chat_models import get_chat_model_metadata
+
+    overrides = data.model_dump(exclude_none=True)
+
+    for key in ("groq_api_key", "nvidia_api_key", "custom_api_key"):
+        value = overrides.get(key)
+        if isinstance(value, str) and "..." in value:
+            overrides.pop(key, None)
+
+    return ChatConfigResponse(**get_chat_model_metadata(overrides=overrides))
 
 
 @router.patch("/ai-settings")
